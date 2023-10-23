@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WonScore Deployments</title>
+  <link rel="icon" type="image/x-icon" href="icons/connect.png">
+  <link rel="stylesheet" href="app.css">
+  <script type="text/javascript" src="//code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+  <script type="text/javascript" src="app.js"></script>
+</head>
+<body>
+  <div id="NewVersionView" class='view' style="display: none;">
+    <div class='title'>New Version</div>
+    <div class="body">
+      <div><label>Current Version: </label><span id="currentVersion" class="value"></span></div>
+      <div><label>Latest Version: </label><span id="newVersion" class="value"></span></div>
+      <br/>
+      <div><label>Release Notes: </label></div>
+      <div id="newVersionChanges"></div>
+      <br/>
+      <div class="message">Please reload current page to update to the latest version!</div>
+      <br/>
+      <div class="btnBar"><button class="refresh icon" onclick="window.location.reload()">Reload</button></div>
+    </div>
+  </div>
+
+  <div id="ConnectionView" class='view' style="display: none;">
+    <div class='title'>MQTT Connection</div>
+    <div class='body'>
+      <div><label>Hostname: </label><input type="text" id="txtMQTTHostName"/></div>
+      <div><label>Username: </label><input type="text" id="txtMQTTUserName"/></div>
+      <div><label>Password: </label><input type="password" id="txtMQTTPassword"/></div>
+	    <br/>
+	    <div>
+        <button id="btnConnect" class="connect icon">Connect</button>
+        <button id="btnCancel" class="cancel icon">Cancel</button>
+      </div>
+	    <br/>
+      <div><label>MQTT Status: </label><span id="connStatus" class="value">Not connected</span></div>
+    </div>
+  </div>
+
+  <div id="MainView" class='view' style="display: none;">
+    <div class='statusBar'>
+      <div>
+        <button id="btnRefresh" class="refresh icon" title="Request a refresh now.">Refresh</button>
+        <button id="btnBoost" class="speed icon" title="Check every 10 seconds for 3 minutes.">Boost!</button>
+        <button id="btnDisconnect" class="disconnect icon" style="display: none;">Disconnect</button>
+      </div>
+      <div><label>AWS last checked: </label><span id="lastChecked" class="value"></span></div>
+      <div><label>Checking AWS every: </label><span id="refreshRate" class="value"></span></div>
+      <div><label>MQTT Status: <label><span id="status" class="value">Not connected</span></div>
+    </div>
+    <div class='title'>WonScore Deployments</div>
+    <div class='body'>
+	    <div>Overall Status:</div>
+      <ul>
+        <li>Jenkins Builds: <span id="buildStatus" class="icon"></span></li>
+        <li>AWS ECS Service Deployments: <span id="deployStatus" class="icon"></span></li>
+      </ul>
+      <br/>
+      <div><label>Filter: </label><input type="text" id="txtFilter"/> <button id="btnResetFilter" class="cancel icon">Reset</button></div>
+      <table id="tblJobs">
+        <thead>
+          <tr>
+            <th>&nbsp;</th>
+            <th colspan=2>Alpha</th>
+            <th colspan=2>Beta</th>
+            <th colspan=2>Prod</th>
+          </tr>
+          <tr>
+            <th>&nbsp;</th>
+            <th class="jenkins icon">Jenkins</th><th class="aws icon">ECS Service</th>
+            <th class="jenkins icon">Jenkins</th><th class="aws icon">ECS Service</th>
+            <th class="jenkins icon">Jenkins</th><th class="aws icon">ECS Service</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</body>
+</html>

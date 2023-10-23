@@ -1,0 +1,243 @@
+BODY {
+  margin: 5px;
+  background-color: #eeeeee;
+  font-family: Segoe UI,Verdana,sans-serif;
+  font-size: 12pt;  
+}
+BUTTON {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 5px;
+  background-color: #bbddff;
+}
+BUTTON:hover {
+  #background-color: #ddeeff;
+  opacity: 70%;
+}
+BUTTON:disabled {
+  cursor: auto;
+  #background-color: #dddddd;
+  opacity: 40%;
+}
+BR {
+  display: block;
+  margin: 8px;
+  font-size: 100%;
+  content: "";  
+}
+.icon {
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+button.icon {
+  background-position-x: 3px;
+  padding-left: 33px;
+  padding-right: 5px;
+}
+/* https://www.veryicon.com/ */
+.connect { background-image: url("icons/connect.png"); }
+.disconnect { background-image: url("icons/disconnect.png"); }
+.cancel { background-image: url("icons/cancel.png"); }
+.refresh { background-image: url("icons/refresh.png"); }
+.speed { background-image: url("icons/speed.png"); }
+.success { background-image: url("icons/success.png"); }
+.in-progress { background-image: url("icons/in-progress.png"); }
+.failed { background-image: url("icons/failed.png"); }
+.jenkins { background-image: url("icons/jenkins.png"); }
+.aws { background-image: url("icons/aws.png"); }
+.api { background-image: url("icons/api.png"); }
+.database { background-image: url("icons/database.png"); }
+.service { background-image: url("icons/service.png"); }
+.web { background-image: url("icons/web.png"); }
+.component { background-image: url("icons/component.png"); }
+.other { background-image: url("icons/other.png"); }
+
+.view {
+  min-width: 340px;
+  max-width: 1280px;
+  margin: auto;  
+  background-color: #f9f9ff;
+  border: 2px solid #ccddee;
+  border-radius: 10px;
+  #padding: 10px 20px 20px 20px;
+  padding: 15px;
+}
+@media only screen and (max-width: 500px) {
+  BODY {
+    margin: 1px;
+  }
+  .view {
+    padding: 5px;
+  }
+}
+.view .title {
+  font-size: 16pt;
+  font-weight: bold;
+  padding-bottom: 20px;
+}
+.view .body {
+  font-size: 14pt;
+}
+.view .body .value {
+  font-weight: bold;
+}
+
+.view#NewVersionView {
+  max-width: 480px;
+}
+.view#NewVersionView .body {
+  padding: 10px;
+  font-size: 12pt;
+}
+.view#NewVersionView .title {
+  text-align: center;
+}
+.view#NewVersionView .btnBar {
+  text-align: center;
+}
+
+.view#ConnectionView {
+  min-width: 340px; 
+  max-width: 400px;
+}
+.view#ConnectionView .title {
+  text-align: center;
+}
+.view#ConnectionView .body {
+  padding: 10px;
+}
+.view#ConnectionView .body label {
+  display: inline-block;
+  min-width: 100px;
+}
+
+.body div span {
+  #margin-left: 5px;
+  #padding: 2px 5px;  
+  #font-weight: bold;
+}
+.body div span.icon {
+  #padding-left: 30px;
+}
+
+.body ul {
+  margin: 5px;
+}
+.body li span {
+  #margin-left: 5px;
+  padding: 2px 5px;  
+  font-weight: bold;
+}
+.body li span.icon {
+  #background-position-x: 3px;
+  padding-left: 30px;
+}
+
+#newVersionChanges label {
+  display: block;
+  font-weight: bold;
+  padding-left: 15px;
+  padding-top: 5px;
+}
+#newVersionChanges ul {
+  margin: 0px;
+}
+#newVersionChanges li {
+  margin-left: 10px;
+  padding-left: 5px;
+}
+
+#tblJobs {
+  width: 100%;
+  border-top: 1px solid #aaccff;
+  border-left: 1px solid #aaccff;
+  border-spacing: 0px;
+  margin-top: 5px;
+}
+#tblJobs thead th {
+  position: sticky;
+  top: 0px;
+  z-index: 1;
+  border-right: 1px solid #aaccff;
+  border-bottom: 1px solid #aaccff;
+  background-color: #bbddff;
+  padding: 2px 5px;
+  white-space: nowrap;
+  font-size: 16pt;
+}
+#tblJobs thead th:first-child {
+  min-width: 100px;
+}
+#tblJobs thead tr:last-child th {
+  top: 30px;
+  background-color: #ddeeff;
+  font-size: 12pt;
+  text-align: left;
+}
+#tblJobs tbody td {  
+  border-right: 1px solid #aaccff;
+  border-bottom: 1px solid #aaccff;
+  padding: 2px 5px;
+  white-space: nowrap;
+  font-size: 12pt;
+}
+#tblJobs .icon {
+  background-position-x: 5px;
+  padding-left: 35px;
+}
+@media only screen and (max-width: 960px) {
+  #tblJobs .icon:not(:first-child) {
+    font-size: 0px !important;
+    padding: 0px;
+    background-position-x: 50%;
+  }
+}
+@media only screen and (max-width: 500px) {
+  #tblJobs thead th {
+    font-size: 12pt;
+  }
+  #tblJobs thead tr:last-child th {
+    top: 24px;
+    font-size: 10pt;
+  }
+  #tblJobs tbody td {
+    font-size: 10pt;
+  }
+  #tblJobs .icon:first-child {
+    background-position-x: 3px;
+    padding-left: 27px;
+  }
+}
+
+.statusBar {
+  max-width: 640px;
+  background-color: #f0f0f9;
+  border: 2px solid #aaaacc;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 12pt;
+  margin-bottom: 10px;
+}
+.statusBar button {
+  margin-bottom: 5px;
+}
+.statusBar .value {
+  font-weight: bold;
+}
+@media only screen and (max-width: 500px) {
+  .statusBar {
+    max-width: 480px;
+  }
+}
+@media only screen and (min-width: 680px) {
+  .statusBar {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+  }
+}
+@media only screen and (min-width: 1910px) {
+  .statusBar {
+    position: fixed;
+  }
+}
