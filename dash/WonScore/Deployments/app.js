@@ -1,4 +1,4 @@
-const _currentVersion = "20231023.02";
+const _currentVersion = "20231023.03";
 let _newVersion = _currentVersion;
 let _mqttCreds;
 let _shouldReconnect;
@@ -18,7 +18,7 @@ function onMQTTConnected() {
     loadMainView();
     localStorage.setItem("autoConnect", true);
 
-    MQTT_Subscribe("dashboard/WonScore/Deployment/version", (version) => {
+    MQTT_Subscribe("dashboard/WonScore/Deployments/version", (version) => {
       if (parseFloat(version) > parseFloat(_currentVersion)) {
         _newVersion = version;
         renderChanges();
@@ -30,7 +30,7 @@ function onMQTTConnected() {
       }
     });
 
-    MQTT_Subscribe("dashboard/WonScore/Deployment/versions/+", (changes, [version]) => {
+    MQTT_Subscribe("dashboard/WonScore/Deployments/ReleaseNotes/+", (changes, [version]) => {
       if (parseFloat(version) > parseFloat(_currentVersion)) { 
         _changes[version] = changes;
         renderChanges();
@@ -142,7 +142,7 @@ function renderStatuses() {
     const job = _jobs[jobName];
     for (const envName of Object.keys(job)) {
       const env = job[envName];
-      if (env.buildStatus && env.buildStatus !== "SUCCESS") {
+      if (env.buildStatus && env.buildStatus !== "SUCCESS" && buildStatus !== "BUILDING") {
         buildStatus = env.buildStatus;
       }
       if (env.deployStatus && env.deployStatus !== "COMPLETED") {
@@ -156,8 +156,8 @@ function renderStatuses() {
   else if (deployStatus !== "COMPLETED") overallStatus = deployStatus;
 
   $('link[rel="icon"]').attr('href', `icons/${getStatusIcon(overallStatus)}`);
-  $("#buildStatus").text(getStatusText(buildStatus)).removeClass("success in-progress failed").addClass(getStatusClass(buildStatus));
-  $("#deployStatus").text(getStatusText(deployStatus)).removeClass("success in-progress failed").addClass(getStatusClass(deployStatus));
+  $("#buildStatus").text(getStatusText(buildStatus)).removeClass("success building failed").addClass(getStatusClass(buildStatus));
+  $("#deployStatus").text(getStatusText(deployStatus)).removeClass("success deploying failed").addClass(getStatusClass(deployStatus));
 }
 
 function renderJobs() {
@@ -210,16 +210,13 @@ function getStatusText(status) {
 
 function getStatusClass(status) {
   switch (status) {
-    case "IN_PROGRESS":
-    case "BUILDING":
-      return "in-progress";
-    case "FAILED":
-    case "FAILURE":
-    case "ABORTED":
-      return "failed";
-    case "COMPLETED":
-    case "SUCCESS":
-      return "success";
+    case "BUILDING":    return "building";
+    case "IN_PROGRESS": return "deploying";
+    case "FAILED":      return "failed";
+    case "FAILURE":     return "failed";
+    case "ABORTED":     return "failed";
+    case "COMPLETED":   return "success";
+    case "SUCCESS":     return "success";
   }
   return "";
 }

@@ -41,7 +41,8 @@ button.icon {
 .refresh { background-image: url("icons/refresh.png"); }
 .speed { background-image: url("icons/speed.png"); }
 .success { background-image: url("icons/success.png"); }
-.in-progress { background-image: url("icons/in-progress.png"); }
+.building { background-image: url("icons/building.png"); }
+.deploying { background-image: url("icons/deploying.png"); }
 .failed { background-image: url("icons/failed.png"); }
 .jenkins { background-image: url("icons/jenkins.png"); }
 .aws { background-image: url("icons/aws.png"); }
@@ -180,6 +181,11 @@ button.icon {
   padding: 2px 5px;
   white-space: nowrap;
   font-size: 12pt;
+}
+#tblJobs tbody td.building,
+#tblJobs tbody td.deploying {
+  background-color: #ddeeff;
+  font-weight: bold;
 }
 #tblJobs .icon {
   background-position-x: 5px;
