@@ -19,14 +19,11 @@ function onMQTTConnected() {
     localStorage.setItem("autoConnect", true);
 
     MQTT_Subscribe("dashboard/WonScore/Deployments/version", (version) => {
+      if (_newVersion !== _currentVersion) return;
       if (parseFloat(version) > parseFloat(_currentVersion)) {
         _newVersion = version;
         renderChanges();
-        $("#currentVersion").text(_currentVersion);
-        $("#newVersion").text(version);
-        $("#NewVersionView").show();
-        $("#MainView").hide();
-        $("#ConnectionView").hide();
+        loadNewVersionView();
       }
     });
 
@@ -38,6 +35,7 @@ function onMQTTConnected() {
     });
 
     MQTT_Subscribe("AWS-WonScore/ECS/services/checking", (ts) => {
+      if (_newVersion !== _currentVersion) return;
       if (ts === "") {
         _checking = false;
       } else {
@@ -47,6 +45,7 @@ function onMQTTConnected() {
     });
 
     MQTT_Subscribe("AWS-WonScore/ECS/services/lastCheckedOn", (ts) => {
+      if (_newVersion !== _currentVersion) return;
       _lastCheckedOn = timestampToDate(ts);
       //_enableRefreshAt = new Date(_lastCheckedOn.getTime() + 5000);
       const seconds = getDateDiffSeconds(_lastCheckedOn, new Date());
@@ -54,6 +53,7 @@ function onMQTTConnected() {
     });
 
     MQTT_Subscribe("AWS-WonScore/ECS/services/refreshRate", (rate) => {
+      if (_newVersion !== _currentVersion) return;
       const refreshRate = parseInt(rate);
       $("#refreshRate").text(getTimespanString(refreshRate));
 	    if (refreshRate === 10) {
@@ -64,12 +64,14 @@ function onMQTTConnected() {
     });
 
     MQTT_Subscribe("AWS-WonScore/ECS/services/+/+/deploymentStatus", (status, [envName, jobName]) => {
+      if (_newVersion !== _currentVersion) return;
       //console.log(envName, jobName, status);
       setJobStatus(envName, jobName, "deployStatus", status);
       renderMainView();
     });
 
     MQTT_Subscribe("Jenkins/+/+/status", (status, [envName, jobName]) => {
+      if (_newVersion !== _currentVersion) return;
       //console.log(envName, jobName, status);
       setJobStatus(envName, jobName, "buildStatus", status);
       renderMainView();
@@ -271,6 +273,15 @@ function timestampToDate(ts) {
 function setStatus(text) {
   $('#connStatus').text(text);
   $('#status').text(text);
+}
+
+function loadNewVersionView() {  
+  $("#currentVersion").text(_currentVersion);
+  $("#newVersion").text(_newVersion);
+  $("#ConnectionView").hide();
+  $("#MainView").hide();
+  $("#NewVersionView").show();  
+  $('link[rel="icon"]').attr('href', "icons/refresh.png");
 }
 
 function loadMainView() {
