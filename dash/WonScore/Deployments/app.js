@@ -1,4 +1,4 @@
-const _currentVersion = "20231023.04";
+const _currentVersion = "20231024.01";
 let _newVersion = _currentVersion;
 let _mqttCreds;
 let _shouldReconnect;
