@@ -158,7 +158,7 @@ function renderStatuses() {
   else if (deployStatus !== "COMPLETED") overallStatus = deployStatus;
 
   $('link[rel="icon"]').attr('href', `icons/${getStatusIcon(overallStatus)}`);
-  $("#buildStatus").text(getStatusText(buildStatus)).removeClass("success building failed").addClass(getStatusClass(buildStatus));
+  $("#buildStatus").text(getStatusText(buildStatus)).removeClass("success building question failed").addClass(getStatusClass(buildStatus));
   $("#deployStatus").text(getStatusText(deployStatus)).removeClass("success deploying failed").addClass(getStatusClass(deployStatus));
 }
 
