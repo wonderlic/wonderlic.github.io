@@ -66,14 +66,21 @@ function onMQTTConnected() {
     MQTT_Subscribe("AWS-WonScore/ECS/services/+/+/deploymentStatus", (status, [envName, jobName]) => {
       if (_newVersion !== _currentVersion) return;
       //console.log(envName, jobName, status);
-      setJobStatus(envName, jobName, "deployStatus", status);
+      setJobField(envName, jobName, "deployStatus", status);
       renderMainView();
     });
 
     MQTT_Subscribe("Jenkins/+/+/status", (status, [envName, jobName]) => {
       if (_newVersion !== _currentVersion) return;
       //console.log(envName, jobName, status);
-      setJobStatus(envName, jobName, "buildStatus", status);
+      setJobField(envName, jobName, "buildStatus", status);
+      renderMainView();
+    });
+
+    MQTT_Subscribe("Jenkins/+/+/inQueueSince", (ts, [envName, jobName]) => {
+      if (_newVersion !== _currentVersion) return;
+      //console.log(envName, jobName, ts);
+      setJobField(envName, jobName, "inQueueSince", ts === "" ? ts : timestampToDate(ts));
       renderMainView();
     });
 
@@ -101,13 +108,13 @@ function onMQTTConnectionLost(reason) {
   }
 }
 
-function setJobStatus(envName, jobName, statusType, status) {
+function setJobField(envName, jobName, key, value) {
   const job = _jobs[jobName] || {alpha: {}, beta: {}, prod: {}};
   const env = job[envName] || {};
-  if (status === "") {
-    delete env[statusType];
+  if (value === "") {
+    delete env[key];
   } else {
-    env[statusType] = status;
+    env[key] = value;
   }
   job[envName] = env;
   // TODO: delete empty jobs?
@@ -131,12 +138,12 @@ function renderChanges() {
 function renderMainView() {
   if (_renderTimeout) clearTimeout(_renderTimeout);
   _renderTimeout = setTimeout(function() {
-    renderStatuses();
+    renderOverallStatuses();
     renderJobs();
   }, 100);  
 }
 
-function renderStatuses() {
+function renderOverallStatuses() {
   let buildStatus = "SUCCESS";
   let deployStatus = "COMPLETED";
 
@@ -178,7 +185,10 @@ function renderJobs() {
 }
 
 function buildJobEnvStatus(env) {
-  return `${buildStatus(env.buildStatus)}${buildStatus(env.deployStatus)}`;
+  let jenkinsStatus = env.buildStatus;
+  if (env.inQueueSince)
+    jenkinsStatus = "QUEUED";
+  return `${buildStatus(jenkinsStatus)}${buildStatus(env.deployStatus)}`;
 }
 
 function buildStatus(status) {
@@ -199,6 +209,7 @@ function getJobType(name) {
 
 function getStatusText(status) {
   switch (status) {
+    case "QUEUED":      return "Queued";
     case "BUILDING":    return "Building";
    	case "IN_PROGRESS": return "Deploying";
     case "FAILED":      return "Failed!";
@@ -214,6 +225,7 @@ function getStatusText(status) {
 
 function getStatusClass(status) {
   switch (status) {
+    case "QUEUED":      return "queued";
     case "BUILDING":    return "building";
     case "IN_PROGRESS": return "deploying";
     case "FAILED":      return "failed";
