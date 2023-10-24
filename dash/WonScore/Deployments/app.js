@@ -165,7 +165,7 @@ function renderOverallStatuses() {
   else if (deployStatus !== "COMPLETED") overallStatus = deployStatus;
 
   $('link[rel="icon"]').attr('href', `icons/${getStatusIcon(overallStatus)}`);
-  $("#buildStatus").text(getStatusText(buildStatus)).removeClass("success building question failed").addClass(getStatusClass(buildStatus));
+  $("#buildStatus").text(getStatusText(buildStatus)).removeClass("success queued building unknown failed").addClass(getStatusClass(buildStatus));
   $("#deployStatus").text(getStatusText(deployStatus)).removeClass("success deploying failed").addClass(getStatusClass(deployStatus));
 }
 
@@ -216,7 +216,7 @@ function getStatusText(status) {
     case "FAILURE":     return "Failed!";
     case "ABORTED":     return "Aborted";
     case "UNSTABLE":    return "Unstable";
-    case "NOT_BUILD":   return "Not Built";
+    case "NOT_BUILT":   return "Not Built";
     case "COMPLETED":   return "Completed";
     case "SUCCESS":     return "Success";
   }
@@ -230,9 +230,9 @@ function getStatusClass(status) {
     case "IN_PROGRESS": return "deploying";
     case "FAILED":      return "failed";
     case "FAILURE":     return "failed";
-    case "ABORTED":     return "question";
-    case "UNSTABLE":    return "question";
-    case "NOT_BUILD":   return "question";
+    case "ABORTED":     return "unknown";
+    case "UNSTABLE":    return "unknown";
+    case "NOT_BUILT":   return "unknown";
     case "COMPLETED":   return "success";
     case "SUCCESS":     return "success";
   }
