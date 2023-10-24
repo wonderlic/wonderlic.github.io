@@ -203,7 +203,9 @@ function getStatusText(status) {
    	case "IN_PROGRESS": return "Deploying";
     case "FAILED":      return "Failed!";
     case "FAILURE":     return "Failed!";
-    case "ABORTED":     return "Aborted!";
+    case "ABORTED":     return "Aborted";
+    case "UNSTABLE":    return "Unstable";
+    case "NOT_BUILD":   return "Not Built";
     case "COMPLETED":   return "Completed";
     case "SUCCESS":     return "Success";
   }
@@ -216,7 +218,9 @@ function getStatusClass(status) {
     case "IN_PROGRESS": return "deploying";
     case "FAILED":      return "failed";
     case "FAILURE":     return "failed";
-    case "ABORTED":     return "failed";
+    case "ABORTED":     return "question";
+    case "UNSTABLE":    return "question";
+    case "NOT_BUILD":   return "question";
     case "COMPLETED":   return "success";
     case "SUCCESS":     return "success";
   }

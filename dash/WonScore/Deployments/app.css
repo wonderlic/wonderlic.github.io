@@ -44,6 +44,7 @@ button.icon {
 .building { background-image: url("icons/building.png"); }
 .deploying { background-image: url("icons/deploying.png"); }
 .failed { background-image: url("icons/failed.png"); }
+.question { background-image: url("icons/question.png"); }
 .jenkins { background-image: url("icons/jenkins.png"); }
 .aws { background-image: url("icons/aws.png"); }
 .api { background-image: url("icons/api.png"); }
@@ -183,7 +184,8 @@ button.icon {
   font-size: 12pt;
 }
 #tblJobs tbody td.building,
-#tblJobs tbody td.deploying {
+#tblJobs tbody td.deploying,
+#tblJobs tbody td.question {
   background-color: #ddeeff;
   font-weight: bold;
 }
