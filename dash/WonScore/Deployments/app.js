@@ -12,6 +12,7 @@ let _checking;
 let _lastCheckedOn;
 let _refreshRate;
 let _isStale = false;
+let _overall;  // {status, since} of the overall status, for the tab title
 // Status cells that changed within this long get a "recent" highlight; each viewer picks it (0 = off).
 const _recentMinutesOptions = [0, 5, 15, 30, 60, 120, 240, 480, 1440, 2880, 4320, 10080, 43200];  // must match #selRecent's options
 let _recentSeconds = getSavedRecentMinutes() * 60;
@@ -189,10 +190,39 @@ function renderOverallStatuses() {
   const buildStatus = getHighestPriorityStatus(...jenkinsCells.map((c) => c.status), "SUCCESS");
   const deployStatus = getHighestPriorityStatus(...deployCells.map((c) => c.status), "COMPLETED");
   const overallStatus = getHighestPriorityStatus(buildStatus, deployStatus);
+  const buildSince = getOverallSince(jenkinsCells, buildStatus);
+  const deploySince = getOverallSince(deployCells, deployStatus);
 
   $('link[rel="icon"]').attr('href', `icons/${_isStale ? "unknown.png" : getStatusIcon(overallStatus)}`);
-  renderOverallStatus("#buildStatus", buildStatus, getOverallSince(jenkinsCells, buildStatus));
-  renderOverallStatus("#deployStatus", deployStatus, getOverallSince(deployCells, deployStatus));
+  renderOverallStatus("#buildStatus", buildStatus, buildSince);
+  renderOverallStatus("#deployStatus", deployStatus, deploySince);
+
+  // The tab title shows whichever overall status won; if both are the same kind, the older of their times.
+  let overallSince = getStatusClass(overallStatus) === getStatusClass(buildStatus) ? buildSince : deploySince;
+  if (getStatusClass(buildStatus) === getStatusClass(deployStatus) && isValidDate(buildSince) && isValidDate(deploySince)) {
+    overallSince = buildSince < deploySince ? buildSince : deploySince;
+  }
+  _overall = {status: overallStatus, since: overallSince};
+  updateTitle();
+}
+
+// Tab title: quiet when all is well (the icon already shows it), otherwise the overall status and its age,
+// e.g. "Deploying 25m · WonScore Deployments", so a pinned or background tab is readable at a glance.
+function updateTitle() {
+  const baseTitle = "WonScore Deployments";
+  let prefix = "";
+  if (_newVersion !== _currentVersion) {
+    prefix = "New version";
+  } else if (!$("#MainView").is(":visible") || !_overall) {
+    prefix = "";
+  } else if (_isStale) {
+    prefix = "Stale";
+  } else if (getStatusClass(_overall.status) !== "success") {
+    prefix = getStatusText(_overall.status);
+    if (isValidDate(_overall.since)) prefix += ` ${getAgeString(getDateDiffSeconds(_overall.since, new Date()))}`;
+  }
+  const title = prefix ? `${prefix} · ${baseTitle}` : baseTitle;
+  if (document.title !== title) document.title = title;
 }
 
 function renderOverallStatus(selector, status, since) {
@@ -362,6 +392,7 @@ setInterval(function() {
   }
   updateStaleness();
   updateAges();
+  updateTitle();
 }, 1000);
 
 function updateAges() {
