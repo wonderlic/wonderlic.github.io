@@ -34,26 +34,27 @@ button.icon {
   padding-left: 33px;
   padding-right: 5px;
 }
-/* https://www.veryicon.com/ */
-.connect { background-image: url("icons/connect.png"); }
-.disconnect { background-image: url("icons/disconnect.png"); }
-.cancel { background-image: url("icons/cancel.png"); }
-.refresh { background-image: url("icons/refresh.png"); }
-.speed { background-image: url("icons/speed.png"); }
-.success { background-image: url("icons/success.png"); }
-.queued { background-image: url("icons/queued.png"); }
-.building { background-image: url("icons/building.png"); }
-.deploying { background-image: url("icons/deploying.png"); }
-.failed { background-image: url("icons/failed.png"); }
-.unknown { background-image: url("icons/unknown.png"); }
+/* Icons are 24x24 SVGs drawn inline, so they need no image files and stay sharp at any size.
+   The Jenkins and AWS logos stay as images. (The PNGs in icons/ are still used for the tab icon.) */
 .jenkins { background-image: url("icons/jenkins.png"); }
 .aws { background-image: url("icons/aws.png"); }
-.api { background-image: url("icons/api.png"); }
-.database { background-image: url("icons/database.png"); }
-.service { background-image: url("icons/service.png"); }
-.web { background-image: url("icons/web.png"); }
-.component { background-image: url("icons/component.png"); }
-.other { background-image: url("icons/other.png"); }
+.connect    { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M7 19h10.5a4.5 4.5 0 0 0 .6-8.96A6.5 6.5 0 0 0 5.6 9.4 4.8 4.8 0 0 0 7 19z'/%3E%3C/svg%3E"); }
+.disconnect { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M7 19h10.5a4.5 4.5 0 0 0 .6-8.96A6.5 6.5 0 0 0 5.6 9.4 4.8 4.8 0 0 0 7 19z'/%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M3 3l18 18'/%3E%3C/svg%3E"); }
+.cancel     { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E"); }
+.refresh    { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M19 12a7 7 0 1 1-2.05-4.95'/%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M17.5 3.5v4h-4'/%3E%3C/svg%3E"); }
+.speed      { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M4.6 18a9 9 0 1 1 14.8 0'/%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M12 14l4-5'/%3E%3Ccircle cx='12' cy='14' r='1.6'/%3E%3C/svg%3E"); }
+.success    { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%2366b032' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round' d='M4.5 12.5l4.8 4.8L19.5 7'/%3E%3C/svg%3E"); }
+.queued     { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' cx='12' cy='12' r='9'/%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M12 7v5l3.5 2.2'/%3E%3C/svg%3E"); }
+.building   { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' x='2.5' y='6' width='19' height='7' rx='1'/%3E%3Cpath d='M5 6.5l-2 4.5V13h1.5l3-6.5zM10.5 6.5l-3 6.5h2.8l3-6.5zM16 6.5l-3 6.5h2.8l3-6.5zM21 9.5l-1.6 3.5h1.6z'/%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M6 13v7M18 13v7M4 20h4M16 20h4'/%3E%3C/svg%3E"); }
+.deploying  { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M13.5 15.5l-5-5C11 5 15 3 20.5 3.5 21 9 19 13 13.5 15.5z'/%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M8.5 10.5l-3.8.4L3.5 13l3.9.6M13.5 15.5l-.4 3.8L11 20.5l-.6-3.9'/%3E%3Ccircle fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' cx='15.7' cy='8.3' r='1.8'/%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M7.6 16.4l-2.4 2.4'/%3E%3C/svg%3E"); }
+.failed     { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23ec6a6a'/%3E%3Cpath fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' d='M12 6.5v7'/%3E%3Ccircle cx='12' cy='17.3' r='1.5' fill='white'/%3E%3C/svg%3E"); }
+.unknown    { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' d='M8.5 9a3.5 3.5 0 1 1 5.3 3c-1.2.7-1.8 1.4-1.8 2.6v.4'/%3E%3Ccircle cx='12' cy='19' r='1.5'/%3E%3C/svg%3E"); }
+.api        { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M7 19h10.5a4.5 4.5 0 0 0 .6-8.96A6.5 6.5 0 0 0 5.6 9.4 4.8 4.8 0 0 0 7 19z'/%3E%3Ctext x='12' y='16.3' font-family='Arial,sans-serif' font-size='6.5' font-weight='bold' text-anchor='middle'%3EAPI%3C/text%3E%3C/svg%3E"); }
+.database   { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cellipse fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' cx='12' cy='6' rx='7.5' ry='3'/%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3'/%3E%3C/svg%3E"); }
+.service    { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2.5' y='4' width='5' height='5' rx='1'/%3E%3Crect x='16.5' y='15' width='5' height='5' rx='1'/%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M7.5 6.5h9a3 3 0 0 1 0 6h-9a3 3 0 0 0 0 6h7'/%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M13.5 16l2.5 2.5-2.5 2.5'/%3E%3C/svg%3E"); }
+.web        { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' x='3' y='4' width='18' height='16' rx='2'/%3E%3Cpath d='M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3H3z'/%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M6.5 12.5h7M6.5 16h5M16 12.5h1.5M16 16h1.5'/%3E%3C/svg%3E"); }
+.component  { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M5 8h3.5a2.5 2.5 0 1 1 5 0H17v3.5a2.5 2.5 0 1 1 0 5V20h-3.5a2.5 2.5 0 1 0-5 0H5v-3.5a2.5 2.5 0 1 0 0-5z'/%3E%3C/svg%3E"); }
+.other      { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5.5' cy='12' r='2'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3Ccircle cx='18.5' cy='12' r='2'/%3E%3C/svg%3E"); }
 
 .view {
   min-width: 340px;
