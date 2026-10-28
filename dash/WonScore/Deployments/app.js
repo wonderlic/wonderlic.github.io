@@ -11,6 +11,9 @@ let _checking;
 let _lastCheckedOn;
 let _refreshRate;
 let _isStale = false;
+// Status cells that changed within this long get a "recent" highlight; each viewer picks it (0 = off).
+const _recentMinutesOptions = [0, 5, 15, 30, 60];
+let _recentSeconds = getSavedRecentMinutes() * 60;
 let _enableRefreshAt;
 //let _enableBoostAt;
 
@@ -88,6 +91,18 @@ function onMQTTConnected() {
       if (_newVersion !== _currentVersion) return;
       //console.log(envName, jobName, ts);
       setJobField(envName, jobName, "inQueueSince", ts === "" ? ts : timestampToDate(ts));
+      renderMainView();
+    });
+
+    MQTT_Subscribe("Jenkins/+/+/statusChangedOn", (ts, [envName, jobName]) => {
+      if (_newVersion !== _currentVersion) return;
+      setJobField(envName, jobName, "buildStatusChangedOn", ts === "" ? ts : timestampToDate(ts));
+      renderMainView();
+    });
+
+    MQTT_Subscribe("AWS-WonScore/ECS/services/+/+/deploymentStatusChangedOn", (ts, [envName, jobName]) => {
+      if (_newVersion !== _currentVersion) return;
+      setJobField(envName, jobName, "deployStatusChangedOn", ts === "" ? ts : timestampToDate(ts));
       renderMainView();
     });
 
@@ -192,15 +207,24 @@ function renderJobs() {
 }
 
 function buildJobEnvStatus(env) {
-  return `${buildStatus(getJenkinsStatus(env))}${buildStatus(env.deployStatus)}`;
+  const jenkinsSince = env.inQueueSince || env.buildStatusChangedOn;
+  return `${buildStatus(getJenkinsStatus(env), jenkinsSince)}${buildStatus(env.deployStatus, env.deployStatusChangedOn)}`;
 }
 
 function getJenkinsStatus(env) {
   return env.inQueueSince ? "QUEUED" : env.buildStatus;
 }
 
-function buildStatus(status) {
-  return `<td class="${getStatusClass(status)} icon">${getStatusText(status)}</td>`;
+// since (optional) is when the status began; it adds an age (and a "recent" highlight) that updateAges() keeps current.
+function buildStatus(status, since) {
+  const text = getStatusText(status);
+  if (!text || !(since instanceof Date) || isNaN(since)) {
+    return `<td class="${getStatusClass(status)} icon">${text}</td>`;
+  }
+  const title = escapeHtml(`${text} since ${since.toLocaleString()}`);
+  const seconds = getDateDiffSeconds(since, new Date());
+  const recent = isRecent(seconds) ? " recent" : "";
+  return `<td class="${getStatusClass(status)} icon${recent}" title="${title}">${text}<span class="age" data-since="${since.getTime()}">${getAgeString(seconds)}</span></td>`;
 }
 
 function getJobType(name) {
@@ -292,7 +316,36 @@ setInterval(function() {
     $("#lastChecked").text(`${getTimespanString(seconds)} ago`);
   }
   updateStaleness();
+  updateAges();
 }, 1000);
+
+function updateAges() {
+  const now = new Date();
+  $("#tblJobs .age").each(function() {
+    const seconds = getDateDiffSeconds(timestampToDate(this.dataset.since), now);
+    $(this).text(getAgeString(seconds));
+    $(this).parent().toggleClass("recent", isRecent(seconds));
+  });
+}
+
+function isRecent(seconds) {
+  // Clamp so a slightly fast publisher clock can't count as recent when the highlight is off.
+  return Math.max(0, seconds) < _recentSeconds;
+}
+
+function getSavedRecentMinutes() {
+  const minutes = parseInt(localStorage.getItem("recentMinutes"));
+  return _recentMinutesOptions.includes(minutes) ? minutes : 15;
+}
+
+// Compact age for status cells: "45s", "12m", "3h", "2d".
+function getAgeString(seconds) {
+  seconds = Math.max(0, seconds);
+  if (seconds < 60) return `${Math.floor(seconds)}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  return `${Math.floor(seconds / 86400)}d`;
+}
 
 // The AWS status is stale when no check has finished in over twice the refresh rate
 // (plus slack for the check itself), e.g. the poller is down or MQTT is disconnected.
@@ -437,6 +490,13 @@ $(document).ready(function() {
     MQTT_Publish("AWS-WonScore/ECS/services/refresh", (new Date()).getTime().toString());
     $("#btnRefresh").attr('disabled','disabled');
     _enableRefreshAt = new Date((new Date()).getTime() + 1000);
+  });
+
+  $("#selRecent").val(String(_recentSeconds / 60)).on("change", function() {
+    const minutes = parseInt($("#selRecent").val());
+    _recentSeconds = minutes * 60;
+    localStorage.setItem("recentMinutes", minutes);
+    updateAges();
   });
 
   $("#btnBoost").on("click", function() {

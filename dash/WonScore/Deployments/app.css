@@ -208,22 +208,51 @@ button.icon {
   white-space: nowrap;
   font-size: 12pt;
 }
+/* Recently changed cells (see _recentSeconds) share the active-cell blue, without the bold. */
+#tblJobs tbody td.recent,
 #tblJobs tbody td.building,
 #tblJobs tbody td.deploying,
 #tblJobs tbody td.unknown,
 #tblJobs tbody td.queued {
   background-color: #ddeeff;
+}
+#tblJobs tbody td.building,
+#tblJobs tbody td.deploying,
+#tblJobs tbody td.unknown,
+#tblJobs tbody td.queued {
   font-weight: bold;
 }
 #tblJobs .icon {
   background-position-x: 5px;
   padding-left: 35px;
 }
-@media only screen and (max-width: 960px) {
+/* Wide (> 1100px): icon, text and age. Medium: icon and age. Narrow (<= 620px): icon only (the cell title keeps the time). */
+#tblJobs .age {
+  margin-left: 0.5em;
+  font-size: 0.8em;
+  font-weight: normal;
+  color: #777777;
+}
+#tblJobs td.recent .age {
+  font-weight: bold;
+  color: #555555;
+}
+/* The full icon + text + age layout needs about 1080px with the longest job names. */
+@media only screen and (max-width: 1100px) {
   #tblJobs .icon:not(:first-child) {
     font-size: 0px !important;
     padding: 0px;
     background-position-x: 50%;
+  }
+  /* Medium: the status text is hidden, but the age stays next to a left-aligned icon. */
+  #tblJobs tbody td.icon:not(:first-child) {
+    padding-left: 32px;
+    padding-right: 4px;
+    background-position-x: 5px;
+  }
+  #tblJobs .age {
+    margin-left: 0px;
+    font-size: 9pt;
   }
 }
 @media only screen and (max-width: 500px) {
@@ -240,6 +269,18 @@ button.icon {
   #tblJobs .icon:first-child {
     background-position-x: 3px;
     padding-left: 27px;
+  }
+}
+/* Narrow: icon only, centered again. The longest job names (e.g. api-integration-greenhouse)
+   need about 610px for the medium icon + age layout. */
+@media only screen and (max-width: 620px) {
+  #tblJobs tbody td.icon:not(:first-child) {
+    padding-left: 0px;
+    padding-right: 0px;
+    background-position-x: 50%;
+  }
+  #tblJobs .age {
+    font-size: 0px;
   }
 }
 
