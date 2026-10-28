@@ -311,6 +311,12 @@ button.icon {
 .statusBar .value {
   font-weight: bold;
 }
+.statusBar .version {
+  margin-top: 5px;
+  font-size: 9pt;
+  color: #777777;
+  text-align: right;
+}
 .statusBar.stale {
   background-color: #ffe8e8;
   border-color: #cc4444;

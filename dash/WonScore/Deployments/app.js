@@ -529,6 +529,8 @@ function loadConnectionView() {
 // jQuery event wire-up
 $(document).ready(function() {
 
+  $("#appVersion").text(_currentVersion);
+
   $("#btnConnect").on("click", function() {
     $("#txtMQTTHostName").attr('disabled','disabled');
     $("#txtMQTTUserName").attr('disabled','disabled');
