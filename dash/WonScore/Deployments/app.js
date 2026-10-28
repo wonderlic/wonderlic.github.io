@@ -147,25 +147,21 @@ function renderMainView() {
 }
 
 function renderOverallStatuses() {
-  let buildStatus = "SUCCESS";
-  let deployStatus = "COMPLETED";
+  const jenkinsStatuses = [];
+  const deployStatuses = [];
 
   for (const jobName of Object.keys(_jobs).sort()) {
     const job = _jobs[jobName];
     for (const envName of Object.keys(job)) {
       const env = job[envName];
-      if (env.buildStatus && env.buildStatus !== "SUCCESS" && buildStatus !== "BUILDING") {
-        buildStatus = env.buildStatus;
-      }
-      if (env.deployStatus && env.deployStatus !== "COMPLETED") {
-        deployStatus = env.deployStatus;
-      }
+      jenkinsStatuses.push(getJenkinsStatus(env));
+      deployStatuses.push(env.deployStatus);
     }
   }
 
-  let overallStatus = "COMPLETED";
-  if (buildStatus !== "SUCCESS") overallStatus = buildStatus;
-  else if (deployStatus !== "COMPLETED") overallStatus = deployStatus;
+  const buildStatus = getHighestPriorityStatus(...jenkinsStatuses, "SUCCESS");
+  const deployStatus = getHighestPriorityStatus(...deployStatuses, "COMPLETED");
+  const overallStatus = getHighestPriorityStatus(buildStatus, deployStatus);
 
   $('link[rel="icon"]').attr('href', `icons/${_isStale ? "unknown.png" : getStatusIcon(overallStatus)}`);
   $("#buildStatus").text(getStatusText(buildStatus)).removeClass("success queued building unknown failed").addClass(getStatusClass(buildStatus));
@@ -188,10 +184,11 @@ function renderJobs() {
 }
 
 function buildJobEnvStatus(env) {
-  let jenkinsStatus = env.buildStatus;
-  if (env.inQueueSince)
-    jenkinsStatus = "QUEUED";
-  return `${buildStatus(jenkinsStatus)}${buildStatus(env.deployStatus)}`;
+  return `${buildStatus(getJenkinsStatus(env))}${buildStatus(env.deployStatus)}`;
+}
+
+function getJenkinsStatus(env) {
+  return env.inQueueSince ? "QUEUED" : env.buildStatus;
 }
 
 function buildStatus(status) {
@@ -240,6 +237,25 @@ function getStatusClass(status) {
     case "SUCCESS":     return "success";
   }
   return "";
+}
+
+// Lower rank wins the overall status: active or pending work first (it may fix a failure),
+// then failures, then oddities, then success. Statuses we don't recognize rank last so they can't hide a real one.
+function getStatusRank(status) {
+  switch (getStatusClass(status)) {
+    case "deploying": return 0;
+    case "building":  return 1;
+    case "queued":    return 2;
+    case "failed":    return 3;
+    case "unknown":   return 4;
+    case "success":   return 5;
+  }
+  return 6;
+}
+
+// Missing or unrecognized statuses rank below everything, so include a known status (e.g. "SUCCESS") as the default.
+function getHighestPriorityStatus(...statuses) {
+  return statuses.reduce((a, b) => getStatusRank(b) < getStatusRank(a) ? b : a);
 }
 
 function getStatusIcon(status) {
