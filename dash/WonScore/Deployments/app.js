@@ -20,6 +20,10 @@ function onMQTTConnected() {
     loadMainView();
     localStorage.setItem("autoConnect", true);
 
+    // Start fresh; the broker resends retained statuses, so jobs deleted while we were disconnected disappear.
+    for (const jobName of Object.keys(_jobs)) delete _jobs[jobName];
+    renderMainView();
+
     MQTT_Subscribe("dashboard/WonScore/Deployments/version", (version) => {
       if (_newVersion !== _currentVersion) return;
       if (parseFloat(version) > parseFloat(_currentVersion)) {
@@ -120,8 +124,12 @@ function setJobField(envName, jobName, key, value) {
     env[key] = value;
   }
   job[envName] = env;
-  // TODO: delete empty jobs?
-  _jobs[jobName] = job;
+  // Drop the job once every field has been cleared, so deleted jobs don't linger as blank rows.
+  if (Object.values(job).every((e) => Object.keys(e).length === 0)) {
+    delete _jobs[jobName];
+  } else {
+    _jobs[jobName] = job;
+  }
 }
 
 function renderChanges() {
