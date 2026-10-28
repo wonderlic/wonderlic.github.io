@@ -9,6 +9,8 @@ let _renderTimeout;
 let _filter = "";
 let _checking;
 let _lastCheckedOn;
+let _refreshRate;
+let _isStale = false;
 let _enableRefreshAt;
 //let _enableBoostAt;
 
@@ -55,6 +57,7 @@ function onMQTTConnected() {
     MQTT_Subscribe("AWS-WonScore/ECS/services/refreshRate", (rate) => {
       if (_newVersion !== _currentVersion) return;
       const refreshRate = parseInt(rate);
+      _refreshRate = refreshRate;
       $("#refreshRate").text(getTimespanString(refreshRate));
 	    if (refreshRate === 10) {
         $("#btnBoost").attr('disabled','disabled');
@@ -164,7 +167,7 @@ function renderOverallStatuses() {
   if (buildStatus !== "SUCCESS") overallStatus = buildStatus;
   else if (deployStatus !== "COMPLETED") overallStatus = deployStatus;
 
-  $('link[rel="icon"]').attr('href', `icons/${getStatusIcon(overallStatus)}`);
+  $('link[rel="icon"]').attr('href', `icons/${_isStale ? "unknown.png" : getStatusIcon(overallStatus)}`);
   $("#buildStatus").text(getStatusText(buildStatus)).removeClass("success queued building unknown failed").addClass(getStatusClass(buildStatus));
   $("#deployStatus").text(getStatusText(deployStatus)).removeClass("success deploying failed").addClass(getStatusClass(deployStatus));
 }
@@ -264,7 +267,21 @@ setInterval(function() {
     let seconds = getDateDiffSeconds(_lastCheckedOn, new Date());
     $("#lastChecked").text(`${getTimespanString(seconds)} ago`);
   }
+  updateStaleness();
 }, 1000);
+
+// The AWS status is stale when no check has finished in over twice the refresh rate
+// (plus slack for the check itself), e.g. the poller is down or MQTT is disconnected.
+function updateStaleness() {
+  if (!_shouldReconnect || _newVersion !== _currentVersion) return;
+  if (!_lastCheckedOn || !_refreshRate) return;
+  const seconds = getDateDiffSeconds(_lastCheckedOn, new Date());
+  const isStale = seconds > _refreshRate * 2 + 30;
+  if (isStale === _isStale) return;
+  _isStale = isStale;
+  $(".statusBar").toggleClass("stale", isStale);
+  renderOverallStatuses();
+}
 
 function getTimespanString(seconds) {
   let minutes = seconds / 60;

@@ -234,6 +234,16 @@ button.icon {
 .statusBar .value {
   font-weight: bold;
 }
+.statusBar.stale {
+  background-color: #ffe8e8;
+  border-color: #cc4444;
+}
+.statusBar.stale #lastChecked {
+  color: #cc0000;
+}
+.statusBar.stale #lastChecked::after {
+  content: " (stale)";
+}
 @media only screen and (max-width: 500px) {
   .statusBar {
     max-width: 480px;
