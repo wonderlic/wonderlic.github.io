@@ -284,6 +284,8 @@ function updateStaleness() {
 }
 
 function getTimespanString(seconds) {
+  // The poller's clock can be slightly ahead of the browser's, so don't show "-3 seconds ago".
+  seconds = Math.max(0, seconds);
   let minutes = seconds / 60;
   seconds = seconds % 60;
   minutes = Math.floor(minutes);
