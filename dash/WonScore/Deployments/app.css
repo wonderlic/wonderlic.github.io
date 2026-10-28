@@ -99,6 +99,30 @@ button.icon {
   text-align: center;
 }
 
+/* Hidden at first and revealed after 3 seconds with CSS alone, so it never flashes on a normal
+   load (app.js removes it first) but still appears if no script runs at all. */
+.view#ErrorView {
+  max-width: 480px;
+  background-color: #ffe8e8;
+  border-color: #cc4444;
+  opacity: 0;
+  animation: showErrorView 0s 3s forwards;
+}
+@keyframes showErrorView {
+  to { opacity: 1; }
+}
+.view#ErrorView .body {
+  padding: 10px;
+  font-size: 12pt;
+}
+.view#ErrorView .title,
+.view#ErrorView .btnBar {
+  text-align: center;
+}
+.view#ErrorView .title .icon {
+  padding-left: 30px;
+}
+
 .view#ConnectionView {
   min-width: 340px; 
   max-width: 400px;

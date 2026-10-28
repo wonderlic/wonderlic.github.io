@@ -448,6 +448,14 @@ $(document).ready(function() {
 });
 
 $(document).ready(function() {
+  // jQuery loaded; keep the error view only if the MQTT library didn't.
+  if (typeof Paho === "undefined") {
+    $("#ErrorView").css({opacity: 1, animation: "none"});
+    $('link[rel="icon"]').attr('href', "icons/failed.png");
+    return;
+  }
+  $("#ErrorView").remove();
+
   _mqttCreds = localStorage.getItem("_mqttCreds");
   if (_mqttCreds) {
     _mqttCreds = JSON.parse(_mqttCreds);

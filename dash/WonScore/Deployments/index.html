@@ -11,6 +11,18 @@
   <script type="text/javascript" src="app.js"></script>
 </head>
 <body>
+  <!-- Shown only if app.js doesn't remove it (e.g. jQuery or Paho failed to load). -->
+  <div id="ErrorView" class='view'>
+    <div class='title'><span class="failed icon">Unable to Load</span></div>
+    <div class="body">
+      <div>Required scripts failed to load.</div>
+      <br/>
+      <div class="message">Try reloading the page, or check your network connection.</div>
+      <br/>
+      <div class="btnBar"><button class="refresh icon" onclick="window.location.reload()">Reload</button></div>
+    </div>
+  </div>
+
   <div id="NewVersionView" class='view' style="display: none;">
     <div class='title'>New Version</div>
     <div class="body">
