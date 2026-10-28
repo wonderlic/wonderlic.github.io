@@ -159,6 +159,18 @@ button.icon {
   /* background-position-x: 3px; */
   padding-left: 30px;
 }
+/* Overall status age; matches the table's age styling. */
+.body li span.age {
+  padding: 0px;
+  margin-left: 0.5em;
+  font-size: 0.8em;
+  font-weight: normal;
+  color: #777777;
+}
+.body li span.recent span.age {
+  font-weight: bold;
+  color: #555555;
+}
 
 #newVersionChanges label {
   display: block;

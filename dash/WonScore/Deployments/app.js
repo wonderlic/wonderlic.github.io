@@ -170,25 +170,55 @@ function renderMainView() {
 }
 
 function renderOverallStatuses() {
-  const jenkinsStatuses = [];
-  const deployStatuses = [];
+  const jenkinsCells = [];
+  const deployCells = [];
 
   for (const jobName of Object.keys(_jobs).sort()) {
     const job = _jobs[jobName];
     for (const envName of Object.keys(job)) {
       const env = job[envName];
-      jenkinsStatuses.push(getJenkinsStatus(env));
-      deployStatuses.push(env.deployStatus);
+      jenkinsCells.push({status: getJenkinsStatus(env), since: getJenkinsSince(env)});
+      deployCells.push({status: env.deployStatus, since: env.deployStatusChangedOn});
     }
   }
 
-  const buildStatus = getHighestPriorityStatus(...jenkinsStatuses, "SUCCESS");
-  const deployStatus = getHighestPriorityStatus(...deployStatuses, "COMPLETED");
+  const buildStatus = getHighestPriorityStatus(...jenkinsCells.map((c) => c.status), "SUCCESS");
+  const deployStatus = getHighestPriorityStatus(...deployCells.map((c) => c.status), "COMPLETED");
   const overallStatus = getHighestPriorityStatus(buildStatus, deployStatus);
 
   $('link[rel="icon"]').attr('href', `icons/${_isStale ? "unknown.png" : getStatusIcon(overallStatus)}`);
-  $("#buildStatus").text(getStatusText(buildStatus)).removeClass("success queued building unknown failed").addClass(getStatusClass(buildStatus));
-  $("#deployStatus").text(getStatusText(deployStatus)).removeClass("success deploying failed").addClass(getStatusClass(deployStatus));
+  renderOverallStatus("#buildStatus", buildStatus, getOverallSince(jenkinsCells, buildStatus));
+  renderOverallStatus("#deployStatus", deployStatus, getOverallSince(deployCells, deployStatus));
+}
+
+function renderOverallStatus(selector, status, since) {
+  const text = getStatusText(status);
+  const $status = $(selector).removeClass("success queued building deploying unknown failed recent").addClass(getStatusClass(status));
+  if (!isValidDate(since)) {
+    $status.text(text).removeAttr("title");
+    return;
+  }
+  const seconds = getDateDiffSeconds(since, new Date());
+  $status.html(`${text}${buildAge(since, seconds)}`)
+    .attr("title", `${text} since ${since.toLocaleString()}`)
+    .toggleClass("recent", isRecent(seconds));
+}
+
+// How long the overall status has been what it is: for an active or failed status, since the oldest cell
+// in that status (which also surfaces the longest-running or longest-broken job); for success, since the
+// newest change anywhere (when the last cell turned green). Cells without a time are skipped.
+function getOverallSince(cells, status) {
+  const statusClass = getStatusClass(status);
+  let overallSince;
+  for (const cell of cells) {
+    if (!isValidDate(cell.since)) continue;
+    if (statusClass === "success") {
+      if (!overallSince || cell.since > overallSince) overallSince = cell.since;
+    } else if (getStatusClass(cell.status) === statusClass) {
+      if (!overallSince || cell.since < overallSince) overallSince = cell.since;
+    }
+  }
+  return overallSince;
 }
 
 function renderJobs() {
@@ -207,24 +237,35 @@ function renderJobs() {
 }
 
 function buildJobEnvStatus(env) {
-  const jenkinsSince = env.inQueueSince || env.buildStatusChangedOn;
-  return `${buildStatus(getJenkinsStatus(env), jenkinsSince)}${buildStatus(env.deployStatus, env.deployStatusChangedOn)}`;
+  return `${buildStatus(getJenkinsStatus(env), getJenkinsSince(env))}${buildStatus(env.deployStatus, env.deployStatusChangedOn)}`;
 }
 
 function getJenkinsStatus(env) {
   return env.inQueueSince ? "QUEUED" : env.buildStatus;
 }
 
+function getJenkinsSince(env) {
+  return env.inQueueSince || env.buildStatusChangedOn;
+}
+
 // since (optional) is when the status began; it adds an age (and a "recent" highlight) that updateAges() keeps current.
 function buildStatus(status, since) {
   const text = getStatusText(status);
-  if (!text || !(since instanceof Date) || isNaN(since)) {
+  if (!text || !isValidDate(since)) {
     return `<td class="${getStatusClass(status)} icon">${text}</td>`;
   }
   const title = escapeHtml(`${text} since ${since.toLocaleString()}`);
   const seconds = getDateDiffSeconds(since, new Date());
   const recent = isRecent(seconds) ? " recent" : "";
-  return `<td class="${getStatusClass(status)} icon${recent}" title="${title}">${text}<span class="age" data-since="${since.getTime()}">${getAgeString(seconds)}</span></td>`;
+  return `<td class="${getStatusClass(status)} icon${recent}" title="${title}">${text}${buildAge(since, seconds)}</td>`;
+}
+
+function buildAge(since, seconds) {
+  return `<span class="age" data-since="${since.getTime()}">${getAgeString(seconds)}</span>`;
+}
+
+function isValidDate(date) {
+  return date instanceof Date && !isNaN(date);
 }
 
 function getJobType(name) {
@@ -321,7 +362,7 @@ setInterval(function() {
 
 function updateAges() {
   const now = new Date();
-  $("#tblJobs .age").each(function() {
+  $("#MainView .age").each(function() {
     const seconds = getDateDiffSeconds(timestampToDate(this.dataset.since), now);
     $(this).text(getAgeString(seconds));
     $(this).parent().toggleClass("recent", isRecent(seconds));
