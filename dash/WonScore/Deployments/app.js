@@ -17,6 +17,8 @@ let _overall;  // {status, since} of the overall status, for the tab title
 // Status cells that changed within this long get a "recent" highlight; each viewer picks it (0 = off).
 const _recentMinutesOptions = [0, 5, 15, 30, 60, 120, 240, 480, 1440, 2880, 4320, 10080, 43200];  // must match #selRecent's options
 let _recentSeconds = getSavedRecentMinutes() * 60;
+// Deploys normally take 1-3 minutes; one still running after this long is flagged as slow.
+const _slowDeploySeconds = 10 * 60;
 let _enableRefreshAt;
 //let _enableBoostAt;
 
@@ -60,6 +62,7 @@ function onMQTTConnected() {
     MQTT_Subscribe("AWS-WonScore/ECS/services/lastCheckedOn", (ts) => {
       if (_newVersion !== _currentVersion) return;
       _lastCheckedOn = timestampToDate(ts);
+      countShortfallChecks();
       //_enableRefreshAt = new Date(_lastCheckedOn.getTime() + 5000);
       const seconds = getDateDiffSeconds(_lastCheckedOn, new Date());
       $("#lastChecked").text(`${getTimespanString(seconds)} ago`);
@@ -110,6 +113,23 @@ function onMQTTConnected() {
       renderMainView();
     });
 
+    // When the desired task count last changed (e.g. scaled to 0), noticed by the AWS poll; used as the Stopped age.
+    MQTT_Subscribe("AWS-WonScore/ECS/services/+/+/desiredCountChangedOn", (ts, [envName, jobName]) => {
+      if (_newVersion !== _currentVersion) return;
+      setJobField(envName, jobName, "desiredCountChangedOn", ts === "" ? ts : timestampToDate(ts));
+      renderMainView();
+    });
+
+    // ECS task counts, for flagging services that have fewer tasks running than desired.
+    for (const [countName, key] of [["runningCount", "ecsRunning"], ["desiredCount", "ecsDesired"], ["pendingCount", "ecsPending"], ["failedCount", "ecsFailed"]]) {
+      MQTT_Subscribe(`AWS-WonScore/ECS/services/+/+/${countName}`, (count, [envName, jobName]) => {
+        if (_newVersion !== _currentVersion) return;
+        setJobField(envName, jobName, key, count === "" ? count : parseInt(count));
+        if (_jobs[jobName]) trackShortfall(_jobs[jobName][envName]);
+        renderMainView();
+      });
+    }
+
   } else {
     MQTT_Disconnect();
   }
@@ -153,6 +173,56 @@ function setJobField(envName, jobName, key, value) {
   }
 }
 
+// A service short of its desired task count is only flagged once a later AWS check still shows it short,
+// so a task being replaced between checks doesn't flash a warning. shortfallChecks counts those checks.
+function trackShortfall(env) {
+  if (!env) return;
+  if (!isShortOfDesired(env)) {
+    delete env.shortfallChecks;
+  } else if (env.shortfallChecks === undefined) {
+    env.shortfallChecks = 0;
+  }
+}
+
+// Only checks after a deploy has completed count; a new deploy starts the count over.
+function countShortfallChecks() {
+  for (const job of Object.values(_jobs)) {
+    for (const env of Object.values(job)) {
+      if (env.shortfallChecks === undefined) continue;
+      env.shortfallChecks = env.deployStatus === "COMPLETED" ? env.shortfallChecks + 1 : 0;
+    }
+  }
+  renderMainView();
+}
+
+function isShortOfDesired(env) {
+  return Number.isInteger(env.ecsRunning) && Number.isInteger(env.ecsDesired) && env.ecsRunning < env.ecsDesired;
+}
+
+// ECS status for display:
+//   FAILING:  a deploy with any failed tasks (a valid deploy has none; usually a boot error that needs a fix and redeploy).
+//   DEGRADED: a completed deploy that has stayed short of its desired tasks (counts move around while deploying,
+//             so only completed deploys are checked for this).
+//   CRASHED:  a completed deploy that has had any task fail since (ECS resets the count on the next deploy).
+//   STOPPED:  a completed deploy scaled to 0 tasks on purpose; shown, but never counted as a problem.
+function getEcsStatus(env) {
+  if (env.deployStatus === "IN_PROGRESS" && env.ecsFailed > 0) return "FAILING";
+  if (env.deployStatus === "COMPLETED" && isShortOfDesired(env) && env.shortfallChecks >= 1) return "DEGRADED";
+  if (env.deployStatus === "COMPLETED" && env.ecsFailed > 0) return "CRASHED";
+  if (env.deployStatus === "COMPLETED" && env.ecsDesired === 0) return "STOPPED";
+  return env.deployStatus;
+}
+
+// Hover text for the ECS cell, e.g. "2 of 3 tasks running, 1 pending, 4 failed since deploy".
+function getEcsHealthText(env) {
+  if (!Number.isInteger(env.ecsRunning) || !Number.isInteger(env.ecsDesired)) return "";
+  if (env.ecsDesired === 0 && env.ecsRunning === 0) return "Scaled to 0 tasks";
+  let text = `${env.ecsRunning} of ${env.ecsDesired} tasks running`;
+  if (env.ecsPending > 0) text += `, ${env.ecsPending} pending`;
+  if (env.ecsFailed > 0) text += `, ${env.ecsFailed} failed since deploy`;
+  return text;
+}
+
 function renderChanges() {
   let html = "";
   for (const v of Object.keys(_changes).sort((a,b) => { return parseFloat(b) - parseFloat(a); })) {
@@ -184,7 +254,7 @@ function renderOverallStatuses() {
     for (const envName of Object.keys(job)) {
       const env = job[envName];
       jenkinsCells.push({status: getJenkinsStatus(env), since: getJenkinsSince(env)});
-      deployCells.push({status: env.deployStatus, since: env.deployStatusChangedOn});
+      deployCells.push({status: getEcsStatus(env), since: getEcsSince(env)});
     }
   }
 
@@ -220,7 +290,11 @@ function updateTitle() {
     prefix = "Stale";
   } else if (getStatusClass(_overall.status) !== "success") {
     prefix = getStatusText(_overall.status);
-    if (isValidDate(_overall.since)) prefix += ` ${getAgeString(getDateDiffSeconds(_overall.since, new Date()))}`;
+    if (isValidDate(_overall.since)) {
+      const seconds = getDateDiffSeconds(_overall.since, new Date());
+      if (isSlowDeploy(_overall.status, seconds)) prefix = "Slow deploy";
+      prefix += ` ${getAgeString(seconds)}`;
+    }
   }
   const title = prefix ? `${prefix} · ${baseTitle}` : baseTitle;
   if (document.title !== title) document.title = title;
@@ -228,7 +302,7 @@ function updateTitle() {
 
 function renderOverallStatus(selector, status, since) {
   const text = getStatusText(status);
-  const $status = $(selector).removeClass("success queued building deploying unknown failed recent").addClass(getStatusClass(status));
+  const $status = $(selector).removeClass("success queued building deploying unknown failed recent slow").addClass(getStatusClass(status));
   if (!isValidDate(since)) {
     $status.text(text).removeAttr("title");
     return;
@@ -236,7 +310,8 @@ function renderOverallStatus(selector, status, since) {
   const seconds = getDateDiffSeconds(since, new Date());
   $status.html(`${text}${buildAge(since, seconds)}`)
     .attr("title", `${text} since ${since.toLocaleString()}`)
-    .toggleClass("recent", isRecent(seconds));
+    .toggleClass("recent", isRecent(seconds))
+    .toggleClass("slow", isSlowDeploy(status, seconds));
 }
 
 // How long the overall status has been what it is: for an active or failed status, since the oldest cell
@@ -244,12 +319,14 @@ function renderOverallStatus(selector, status, since) {
 // newest change anywhere (when the last cell turned green). Cells without a time are skipped.
 function getOverallSince(cells, status) {
   const statusClass = getStatusClass(status);
+  // FAILING shares the "failed" class with FAILED and DEGRADED but outranks them, so only failing deploys count for it.
+  const sameKind = (cellStatus) => status === "FAILING" ? cellStatus === "FAILING" : getStatusClass(cellStatus) === statusClass;
   let overallSince;
   for (const cell of cells) {
     if (!isValidDate(cell.since)) continue;
     if (statusClass === "success") {
       if (!overallSince || cell.since > overallSince) overallSince = cell.since;
-    } else if (getStatusClass(cell.status) === statusClass) {
+    } else if (sameKind(cell.status)) {
       if (!overallSince || cell.since < overallSince) overallSince = cell.since;
     }
   }
@@ -272,7 +349,16 @@ function renderJobs() {
 }
 
 function buildJobEnvStatus(env) {
-  return `${buildStatus(getJenkinsStatus(env), getJenkinsSince(env))}${buildStatus(env.deployStatus, env.deployStatusChangedOn)}`;
+  return `${buildStatus(getJenkinsStatus(env), getJenkinsSince(env))}${buildStatus(getEcsStatus(env), getEcsSince(env), env)}`;
+}
+
+// We don't know when a service became degraded or had tasks crash, so those get no age.
+// Scaling to 0 doesn't start a new deployment (deployStatusChangedOn is still the last deploy), so Stopped uses
+// desiredCountChangedOn instead, when Node-RED has seen the change; otherwise it gets no age either.
+function getEcsSince(env) {
+  const status = getEcsStatus(env);
+  if (status === "STOPPED") return env.desiredCountChangedOn;
+  return status === "DEGRADED" || status === "CRASHED" ? undefined : env.deployStatusChangedOn;
 }
 
 function getJenkinsStatus(env) {
@@ -284,15 +370,36 @@ function getJenkinsSince(env) {
 }
 
 // since (optional) is when the status began; it adds an age (and a "recent" highlight) that updateAges() keeps current.
-function buildStatus(status, since) {
+// ecsEnv (optional, ECS cells only) adds the task counts to the hover text, and shows them in place of the age when degraded.
+function buildStatus(status, since, ecsEnv) {
   const text = getStatusText(status);
-  if (!text || !isValidDate(since)) {
-    return `<td class="${getStatusClass(status)} icon">${text}</td>`;
+  if (!text) {
+    return `<td class="${getStatusClass(status)} icon"></td>`;
   }
-  const title = escapeHtml(`${text} since ${since.toLocaleString()}`);
-  const seconds = getDateDiffSeconds(since, new Date());
-  const recent = isRecent(seconds) ? " recent" : "";
-  return `<td class="${getStatusClass(status)} icon${recent}" title="${title}">${text}${buildAge(since, seconds)}</td>`;
+  let classes = `${getStatusClass(status)} icon`;
+  let suffix = "";
+  const titleLines = [];
+  if (isValidDate(since)) {
+    const seconds = getDateDiffSeconds(since, new Date());
+    if (isRecent(seconds)) classes += " recent";
+    if (isSlowDeploy(status, seconds)) classes += " slow";
+    suffix = buildAge(since, seconds);
+    // A failing deploy's time is when the deploy started, not when it started failing.
+    titleLines.push(`${status === "FAILING" ? "Deploying" : text} since ${since.toLocaleString()}`);
+  }
+  if (ecsEnv) {
+    const healthText = getEcsHealthText(ecsEnv);
+    if (healthText) titleLines.push(healthText);
+    if (status === "DEGRADED") {
+      classes += " degraded";
+      suffix = `<span class="health">${ecsEnv.ecsRunning}/${ecsEnv.ecsDesired}</span>`;
+    } else if (status === "FAILING" || status === "CRASHED") {
+      classes += " failing";
+      suffix = `<span class="health">✗${ecsEnv.ecsFailed}</span>`;
+    }
+  }
+  const title = titleLines.length > 0 ? ` title="${escapeHtml(titleLines.join("\n"))}"` : "";
+  return `<td class="${classes}"${title}>${text}${suffix}</td>`;
 }
 
 function buildAge(since, seconds) {
@@ -314,6 +421,7 @@ function getJobType(name) {
 
 // Jenkins: BUILDING, SUCCESS, UNSTABLE, FAILURE, NOT_BUILT, ABORTED
 // AWS ECS: COMPLETED, IN_PROGRESS, FAILED
+// Dashboard: QUEUED (Jenkins, from inQueueSince), FAILING, DEGRADED, CRASHED and STOPPED (ECS, see getEcsStatus)
 
 function getStatusText(status) {
   switch (status) {
@@ -322,6 +430,10 @@ function getStatusText(status) {
    	case "IN_PROGRESS": return "Deploying";
     case "FAILED":      return "Failed!";
     case "FAILURE":     return "Failed!";
+    case "FAILING":     return "Failing";
+    case "DEGRADED":    return "Degraded";
+    case "CRASHED":     return "Crashed";
+    case "STOPPED":     return "Stopped";
     case "ABORTED":     return "Aborted";
     case "UNSTABLE":    return "Unstable";
     case "NOT_BUILT":   return "Not Built";
@@ -338,6 +450,10 @@ function getStatusClass(status) {
     case "IN_PROGRESS": return "deploying";
     case "FAILED":      return "failed";
     case "FAILURE":     return "failed";
+    case "FAILING":     return "failed";
+    case "DEGRADED":    return "failed";
+    case "CRASHED":     return "failed";
+    case "STOPPED":     return "stopped";
     case "ABORTED":     return "unknown";
     case "UNSTABLE":    return "unknown";
     case "NOT_BUILT":   return "unknown";
@@ -347,9 +463,12 @@ function getStatusClass(status) {
   return "";
 }
 
-// Lower rank wins the overall status: active or pending work first (it may fix a failure),
-// then failures, then oddities, then success. Statuses we don't recognize rank last so they can't hide a real one.
+// Lower rank wins the overall status: a failing deploy first (it's the active work, and it needs someone),
+// then other active or pending work (it may fix a failure), then failures, then oddities, then success.
+// Stopped ranks just below success, so the "COMPLETED" default always beats it and it never sets the overall status.
+// Statuses we don't recognize rank last so they can't hide a real one.
 function getStatusRank(status) {
+  if (status === "FAILING") return -1;
   switch (getStatusClass(status)) {
     case "deploying": return 0;
     case "building":  return 1;
@@ -357,6 +476,7 @@ function getStatusRank(status) {
     case "failed":    return 3;
     case "unknown":   return 4;
     case "success":   return 5;
+    case "stopped":   return 5.5;
   }
   return 6;
 }
@@ -401,8 +521,14 @@ function updateAges() {
   $("#MainView .age").each(function() {
     const seconds = getDateDiffSeconds(timestampToDate(this.dataset.since), now);
     $(this).text(getAgeString(seconds));
-    $(this).parent().toggleClass("recent", isRecent(seconds));
+    const $parent = $(this).parent();
+    $parent.toggleClass("recent", isRecent(seconds));
+    $parent.toggleClass("slow", $parent.hasClass("deploying") && seconds > _slowDeploySeconds);
   });
+}
+
+function isSlowDeploy(status, seconds) {
+  return getStatusClass(status) === "deploying" && seconds > _slowDeploySeconds;
 }
 
 function isRecent(seconds) {

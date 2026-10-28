@@ -55,6 +55,7 @@ button.icon {
 .web        { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' x='3' y='4' width='18' height='16' rx='2'/%3E%3Cpath d='M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3H3z'/%3E%3Cpath fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M6.5 12.5h7M6.5 16h5M16 12.5h1.5M16 16h1.5'/%3E%3C/svg%3E"); }
 .component  { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' d='M5 8h3.5a2.5 2.5 0 1 1 5 0H17v3.5a2.5 2.5 0 1 1 0 5V20h-3.5a2.5 2.5 0 1 0-5 0H5v-3.5a2.5 2.5 0 1 0 0-5z'/%3E%3C/svg%3E"); }
 .other      { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5.5' cy='12' r='2'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3Ccircle cx='18.5' cy='12' r='2'/%3E%3C/svg%3E"); }
+.stopped    { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='5.5' y='5.5' width='13' height='13' rx='2' fill='%23888888'/%3E%3C/svg%3E"); }
 
 .view {
   min-width: 340px;
@@ -172,6 +173,10 @@ button.icon {
   font-weight: bold;
   color: #555555;
 }
+.body li span.slow span.age {
+  font-weight: bold;
+  color: #cc0000;
+}
 
 #newVersionChanges label {
   display: block;
@@ -235,6 +240,17 @@ button.icon {
 #tblJobs tbody td.queued {
   font-weight: bold;
 }
+/* ECS service scaled to 0 tasks on purpose (see getEcsStatus): gray, not a problem. */
+#tblJobs tbody td.stopped {
+  color: #888888;
+}
+/* ECS problems (see getEcsStatus and _slowDeploySeconds); the light red matches the stale and error warnings. */
+#tblJobs tbody td.degraded,
+#tblJobs tbody td.failing,
+#tblJobs tbody td.slow {
+  background-color: #ffe8e8;
+  font-weight: bold;
+}
 #tblJobs .icon {
   background-position-x: 5px;
   padding-left: 35px;
@@ -250,6 +266,16 @@ button.icon {
   font-weight: bold;
   color: #555555;
 }
+#tblJobs td.slow .age {
+  color: #cc0000;
+}
+/* Running/desired or failed task counts, shown in place of the age on degraded and failing ECS cells. */
+#tblJobs .health {
+  margin-left: 0.5em;
+  font-size: 0.8em;
+  font-weight: bold;
+  color: #cc0000;
+}
 /* The full icon + text + age layout needs about 1180px with the longest job names, widest statuses and ages like "11mo". */
 @media only screen and (max-width: 1200px) {
   #tblJobs .icon:not(:first-child) {
@@ -263,7 +289,8 @@ button.icon {
     padding-right: 4px;
     background-position-x: 5px;
   }
-  #tblJobs .age {
+  #tblJobs .age,
+  #tblJobs .health {
     margin-left: 0px;
     font-size: 9pt;
   }
@@ -292,7 +319,8 @@ button.icon {
     padding-right: 0px;
     background-position-x: 50%;
   }
-  #tblJobs .age {
+  #tblJobs .age,
+  #tblJobs .health {
     font-size: 0px;
   }
 }
