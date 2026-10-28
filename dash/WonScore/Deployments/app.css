@@ -11,12 +11,12 @@ BUTTON {
   background-color: #bbddff;
 }
 BUTTON:hover {
-  #background-color: #ddeeff;
+  /* background-color: #ddeeff; */
   opacity: 70%;
 }
 BUTTON:disabled {
   cursor: auto;
-  #background-color: #dddddd;
+  /* background-color: #dddddd; */
   opacity: 40%;
 }
 BR {
@@ -62,7 +62,7 @@ button.icon {
   background-color: #f9f9ff;
   border: 2px solid #ccddee;
   border-radius: 10px;
-  #padding: 10px 20px 20px 20px;
+  /* padding: 10px 20px 20px 20px; */
   padding: 15px;
 }
 @media only screen and (max-width: 500px) {
@@ -115,24 +115,24 @@ button.icon {
 }
 
 .body div span {
-  #margin-left: 5px;
-  #padding: 2px 5px;  
-  #font-weight: bold;
+  /* margin-left: 5px; */
+  /* padding: 2px 5px; */  
+  /* font-weight: bold; */
 }
 .body div span.icon {
-  #padding-left: 30px;
+  /* padding-left: 30px; */
 }
 
 .body ul {
   margin: 5px;
 }
 .body li span {
-  #margin-left: 5px;
+  /* margin-left: 5px; */
   padding: 2px 5px;  
   font-weight: bold;
 }
 .body li span.icon {
-  #background-position-x: 3px;
+  /* background-position-x: 3px; */
   padding-left: 30px;
 }
 

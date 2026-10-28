@@ -1,4 +1,4 @@
-const _currentVersion = "20231024.01";
+const _currentVersion = "20261028.01";
 let _newVersion = _currentVersion;
 let _mqttCreds;
 let _shouldReconnect;
@@ -125,10 +125,10 @@ function renderChanges() {
   let html = "";
   for (const v of Object.keys(_changes).sort((a,b) => { return parseFloat(b) - parseFloat(a); })) {
     if (parseFloat(v) > parseFloat(_newVersion)) continue;
-    html += `<div><label>${v}:</label></div><ul>`;
+    html += `<div><label>${escapeHtml(v)}:</label></div><ul>`;
     for (const change of _changes[v].replaceAll("\r", "").split("\n")) {
       if (change === "") continue;
-      html += `<li>${change}</li>`;
+      html += `<li>${escapeHtml(change)}</li>`;
     }
     html += `</ul>`;
   }
@@ -176,7 +176,7 @@ function renderJobs() {
     if (!jobName.includes(_filter)) continue;
 	}
 	const job = _jobs[jobName];
-    html += `<tr><td class="${getJobType(jobName)} icon">${jobName}</td>${buildJobEnvStatus(job.alpha)}${buildJobEnvStatus(job.beta)}${buildJobEnvStatus(job.prod)}</tr>`;
+    html += `<tr><td class="${getJobType(jobName)} icon">${escapeHtml(jobName)}</td>${buildJobEnvStatus(job.alpha)}${buildJobEnvStatus(job.beta)}${buildJobEnvStatus(job.prod)}</tr>`;
   }
   if (html == "") {
     html = `<tr><td colspan="7">No results found.</tr>`;
@@ -286,6 +286,15 @@ function timestampToDate(ts) {
   return new Date(parseInt(ts));
 }
 
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function setStatus(text) {
   $('#connStatus').text(text);
   $('#status').text(text);
@@ -349,6 +358,7 @@ $(document).ready(function() {
 
   $("#btnCancel").on("click", function() {
     MQTT_Disconnect();
+    localStorage.setItem("autoConnect", false);
     setStatus("Not connected");
     $("#btnConnect").removeAttr("disabled");
     $("#txtMQTTHostName").removeAttr("disabled");
@@ -359,6 +369,7 @@ $(document).ready(function() {
 
   $("#btnDisconnect").on("click", function() {
     MQTT_Disconnect();
+    localStorage.setItem("autoConnect", false);
     loadConnectionView();
   });
 
@@ -400,7 +411,7 @@ $(document).ready(function() {
   }
   loadConnectionView();
   const autoConnect = localStorage.getItem("autoConnect");
-  if (autoConnect) {
+  if (autoConnect === "true") {
     $("#btnConnect").click();    
   }
 });
@@ -430,7 +441,10 @@ function MQTT_Subscribe(topic, cb) {
 function MQTT_Connect() {
   if (!_shouldReconnect) return;
 
-  _mqttClient = new Paho.MQTT.Client(_mqttCreds.host, 443, "myclientid_" + parseInt(Math.random() * 100, 10));
+  // Random suffix so concurrent viewers don't share an id (the broker drops the older connection on a duplicate).
+  // Kept under 23 chars for brokers that enforce the MQTT 3.1 client id limit.
+  const clientId = "wsdeploy_" + Math.random().toString(36).slice(2, 12);
+  _mqttClient = new Paho.MQTT.Client(_mqttCreds.host, 443, clientId);
   _mqttClient.onConnectionLost = onMQTTConnectionLost;
 
   _mqttClient.onMessageArrived = function(message) {
