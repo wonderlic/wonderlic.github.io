@@ -180,7 +180,7 @@ function renderJobs() {
   let html = "";
   for (const jobName of Object.keys(_jobs).sort()) {
 	if (_filter !== "")	{
-    if (!jobName.includes(_filter)) continue;
+    if (!jobName.toLowerCase().includes(_filter)) continue;
 	}
 	const job = _jobs[jobName];
     html += `<tr><td class="${getJobType(jobName)} icon">${escapeHtml(jobName)}</td>${buildJobEnvStatus(job.alpha)}${buildJobEnvStatus(job.beta)}${buildJobEnvStatus(job.prod)}</tr>`;
@@ -416,8 +416,8 @@ $(document).ready(function() {
     loadConnectionView();
   });
 
-  $("#txtFilter").on("change", function() {
-    _filter = $("#txtFilter").val().toLowerCase();
+  $("#txtFilter").on("input", function() {
+    _filter = $("#txtFilter").val().trim().toLowerCase();
     renderMainView();
     if (_filter !== "") {
       $("#btnResetFilter").show();
