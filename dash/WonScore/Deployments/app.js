@@ -2,6 +2,7 @@ const _currentVersion = "20261028.05";
 let _newVersion = _currentVersion;
 let _mqttCreds;
 let _shouldReconnect;
+let _connected = false;
 
 const _changes = {};
 const _jobs = {};
@@ -20,6 +21,7 @@ let _enableRefreshAt;
 function onMQTTConnected() {
   if (_shouldReconnect) {
     setStatus("Connected");
+    setConnected(true);
     loadMainView();
     localStorage.setItem("autoConnect", true);
 
@@ -112,6 +114,7 @@ function onMQTTConnected() {
 }
 
 function onMQTTConnectionFailure(reason) {
+  setConnected(false);
   if (_shouldReconnect) {
     setStatus("Connection failed: " + reason.errorMessage);
     setTimeout(MQTT_Connect, 2000);
@@ -122,6 +125,7 @@ function onMQTTConnectionFailure(reason) {
 }
 
 function onMQTTConnectionLost(reason) {
+  setConnected(false);
   if (_shouldReconnect) {
     setStatus("Connection lost: " + reason.errorMessage);
     setTimeout(MQTT_Connect, 2000);
@@ -339,7 +343,7 @@ setInterval(function() {
   if (_enableRefreshAt) {
     const seconds = getDateDiffSeconds(_enableRefreshAt, new Date());
     if (seconds >= 0) {
-      $("#btnRefresh").removeAttr('disabled');
+      if (_connected) $("#btnRefresh").removeAttr('disabled');
       _enableRefreshAt = undefined;
     } else {
       $("#btnRefresh").attr('disabled','disabled');
@@ -440,6 +444,18 @@ function escapeHtml(text) {
 function setStatus(text) {
   $('#connStatus').text(text);
   $('#status').text(text);
+}
+
+// Refresh and Boost publish to MQTT, which throws while disconnected, so they're only enabled when connected.
+function setConnected(connected) {
+  _connected = connected;
+  if (connected) {
+    if (!_enableRefreshAt) $("#btnRefresh").removeAttr("disabled");
+    if (_refreshRate !== 10) $("#btnBoost").removeAttr("disabled");
+  } else {
+    $("#btnRefresh").attr("disabled", "disabled");
+    $("#btnBoost").attr("disabled", "disabled");
+  }
 }
 
 function loadNewVersionView() {  
@@ -583,6 +599,7 @@ let _mqttClient;
 let _mqttSubscriptions;
 
 function MQTT_Publish(topic, payload, qos=0, retained=false) {
+  if (!_connected) return;
   const message = new Paho.MQTT.Message(payload);
   message.destinationName = topic;
   message.qos = qos;
@@ -648,6 +665,7 @@ function MQTT_Connect() {
 
 function MQTT_Disconnect() {
   _shouldReconnect = false;
+  setConnected(false);
   if (_mqttClient) {
     try {
       _mqttClient.disconnect();
