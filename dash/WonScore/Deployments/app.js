@@ -1,4 +1,5 @@
-const _currentVersion = "20261028.06";
+const _currentVersion = "20261028.06";  // also bump the ?v= on app.js and app.css in index.html
+const _loadedVersions = getLoadedVersions();
 let _newVersion = _currentVersion;
 let _mqttCreds;
 let _shouldReconnect;
@@ -472,6 +473,25 @@ function escapeHtml(text) {
     .replaceAll("'", "&#39;");
 }
 
+// The ?v= that index.html put on the app.js and app.css tags. Read while app.js is first running,
+// since document.currentScript is only set then.
+function getLoadedVersions() {
+  const versionOf = (url) => url ? new URL(url, location.href).searchParams.get("v") : null;
+  const css = [...document.querySelectorAll('link[rel="stylesheet"]')].find((l) => new URL(l.href).pathname.endsWith("/app.css"));
+  return {
+    "app.js": versionOf(document.currentScript && document.currentScript.src),
+    "app.css": versionOf(css && css.href),
+  };
+}
+
+// Returns the version text for the status bar, noting any ?v= in index.html that doesn't match
+// _currentVersion (a version number missed during a release), or "" when they all match.
+function getVersionMismatch(loadedVersions) {
+  const others = [...new Set(Object.values(loadedVersions).filter((v) => v !== _currentVersion))];
+  if (others.length === 0) return "";
+  return `index.html has ${others.map((v) => v || "no version").join(", ")}`;
+}
+
 function setStatus(text) {
   $('#connStatus').text(text);
   $('#status').text(text);
@@ -530,6 +550,12 @@ function loadConnectionView() {
 $(document).ready(function() {
 
   $("#appVersion").text(_currentVersion);
+  const versionMismatch = getVersionMismatch(_loadedVersions);
+  if (versionMismatch) {
+    $("#appVersion").text(`${_currentVersion} (${versionMismatch})`);
+    $(".statusBar .version").addClass("mismatch").attr("title", "Version mismatch: update ?v= in index.html to match app.js");
+    console.error(`Version mismatch: app.js is ${_currentVersion}, but index.html loaded`, _loadedVersions);
+  }
 
   $("#btnConnect").on("click", function() {
     $("#txtMQTTHostName").attr('disabled','disabled');
