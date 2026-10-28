@@ -12,7 +12,7 @@ let _lastCheckedOn;
 let _refreshRate;
 let _isStale = false;
 // Status cells that changed within this long get a "recent" highlight; each viewer picks it (0 = off).
-const _recentMinutesOptions = [0, 5, 15, 30, 60];
+const _recentMinutesOptions = [0, 5, 15, 30, 60, 120, 240, 480, 1440, 2880, 4320, 10080, 43200];  // must match #selRecent's options
 let _recentSeconds = getSavedRecentMinutes() * 60;
 let _enableRefreshAt;
 //let _enableBoostAt;
@@ -379,13 +379,18 @@ function getSavedRecentMinutes() {
   return _recentMinutesOptions.includes(minutes) ? minutes : 15;
 }
 
-// Compact age for status cells: "45s", "12m", "3h", "2d".
+// Compact age for status cells: "45s", "12m", "3h", "9d", "3w", "4mo", "2y".
+// Days are kept up to 2 weeks and weeks through 8 weeks (so months start at "2mo"), where the extra precision still helps.
 function getAgeString(seconds) {
   seconds = Math.max(0, seconds);
+  const days = seconds / 86400;
   if (seconds < 60) return `${Math.floor(seconds)}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-  return `${Math.floor(seconds / 86400)}d`;
+  if (days < 1) return `${Math.floor(seconds / 3600)}h`;
+  if (days < 14) return `${Math.floor(days)}d`;
+  if (days < 63) return `${Math.floor(days / 7)}w`;
+  if (days < 365) return `${Math.floor(days / (365 / 12))}mo`;
+  return `${Math.floor(days / 365)}y`;
 }
 
 // The AWS status is stale when no check has finished in over twice the refresh rate

@@ -238,7 +238,7 @@ button.icon {
   background-position-x: 5px;
   padding-left: 35px;
 }
-/* Wide (> 1100px): icon, text and age. Medium: icon and age. Narrow (<= 620px): icon only (the cell title keeps the time). */
+/* Wide (> 1200px): icon, text and age. Medium: icon and age. Narrow (<= 680px): icon only (the cell title keeps the time). */
 #tblJobs .age {
   margin-left: 0.5em;
   font-size: 0.8em;
@@ -249,8 +249,8 @@ button.icon {
   font-weight: bold;
   color: #555555;
 }
-/* The full icon + text + age layout needs about 1080px with the longest job names. */
-@media only screen and (max-width: 1100px) {
+/* The full icon + text + age layout needs about 1180px with the longest job names, widest statuses and ages like "11mo". */
+@media only screen and (max-width: 1200px) {
   #tblJobs .icon:not(:first-child) {
     font-size: 0px !important;
     padding: 0px;
@@ -284,8 +284,8 @@ button.icon {
   }
 }
 /* Narrow: icon only, centered again. The longest job names (e.g. api-integration-greenhouse)
-   need about 610px for the medium icon + age layout. */
-@media only screen and (max-width: 620px) {
+   need about 665px for the medium icon + age layout with ages like "11mo". */
+@media only screen and (max-width: 680px) {
   #tblJobs tbody td.icon:not(:first-child) {
     padding-left: 0px;
     padding-right: 0px;
