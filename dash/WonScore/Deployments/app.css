@@ -275,6 +275,21 @@ button.icon {
   background-position-x: 5px;
   padding-left: 35px;
 }
+/* Jenkins cell whose previous stage built after it (see getPromotionNote): a quiet dot in the corner, which takes
+   no width, so it shows at every screen size. */
+#tblJobs tbody td.behind {
+  position: relative;
+}
+#tblJobs tbody td.behind::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #3d7fd9;
+}
 /* Status cells that open Jenkins or AWS when clicked (see getLink). */
 #tblJobs tbody td.linked {
   cursor: pointer;

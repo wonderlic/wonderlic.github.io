@@ -5,6 +5,9 @@ let _mqttCreds;
 let _shouldReconnect;
 let _connected = false;
 
+// The environments, in pipeline order (each promotes to the next); must match the table's columns in index.html.
+const _envNames = ["alpha", "beta", "prod"];
+
 const _changes = {};
 const _jobs = {};
 let _renderTimeout;
@@ -159,7 +162,7 @@ function onMQTTConnectionLost(reason) {
 }
 
 function setJobField(envName, jobName, key, value) {
-  const job = _jobs[jobName] || {alpha: {}, beta: {}, prod: {}};
+  const job = _jobs[jobName] || Object.fromEntries(_envNames.map((name) => [name, {}]));
   const env = job[envName] || {};
   if (value === "") {
     delete env[key];
@@ -346,25 +349,54 @@ function renderJobs() {
       if (!jobName.toLowerCase().includes(_filter)) continue;
     }
     const job = _jobs[jobName];
-    html += `<tr><td class="${getJobType(jobName)} icon">${escapeHtml(jobName)}</td>${buildJobEnvStatus(job.alpha, "alpha", jobName)}${buildJobEnvStatus(job.beta, "beta", jobName)}${buildJobEnvStatus(job.prod, "prod", jobName)}</tr>`;
+    html += `<tr><td class="${getJobType(jobName)} icon">${escapeHtml(jobName)}</td>${_envNames.map((envName) => buildJobEnvStatus(job, envName, jobName)).join("")}</tr>`;
   }
   if (html == "") {
-    html = `<tr><td colspan="7">No results found.</tr>`;
+    html = `<tr><td colspan="${1 + 2 * _envNames.length}">No results found.</tr>`;
   }
   $("#tblJobs > tbody").html(html);
 }
 
-function buildJobEnvStatus(env, envName, jobName) {
+function buildJobEnvStatus(job, envName, jobName) {
+  const env = job[envName];
   const jenkinsLink = getLink("jenkins", envName, jobName, "Jenkins");
   const ecsLink = getLink("ecs", envName, jobName, "AWS");
-  return `${buildStatus(getJenkinsStatus(env), getJenkinsSince(env), undefined, jenkinsLink)}${buildStatus(getEcsStatus(env), getEcsSince(env), env, ecsLink)}`;
+  const jenkins = buildStatus(getJenkinsStatus(env), getJenkinsSince(env), undefined, jenkinsLink, getPromotionNote(job, envName));
+  return `${jenkins}${buildStatus(getEcsStatus(env), getEcsSince(env), env, ecsLink)}`;
 }
 
-// Dashboard settings come from one retained MQTT topic (dashboard/WonScore/Deployments/config), so no addresses
-// live in this code. Currently just the link templates for the status cells:
+// Builds flow through the environments in _envNames order, and only changed jobs build. So a Jenkins cell whose
+// previous stage built after it likely has changes waiting to be promoted to it. Only Jenkins cells are compared:
+// an API's ECS cell follows its own Jenkins build anyway.
+// Returns the hover note for such a cell, or undefined. The config's optional "branches"
+// ({"alpha": "develop", "beta": "master", "prod": "master"}) names what may be waiting.
+function getPromotionNote(job, envName) {
+  const index = _envNames.indexOf(envName);
+  if (index < 1) return undefined;
+  const fromEnv = _envNames[index - 1];
+  const mine = job[envName] && job[envName].buildStatusChangedOn;
+  const previous = job[fromEnv] && job[fromEnv].buildStatusChangedOn;
+  if (!isValidDate(mine) || !isValidDate(previous) || previous <= mine) return undefined;
+  const capitalize = (name) => name.charAt(0).toUpperCase() + name.slice(1);
+  const from = capitalize(fromEnv), to = capitalize(envName);
+  const branches = _config.branches && typeof _config.branches === "object" ? _config.branches : {};
+  const fromBranch = branches[fromEnv], toBranch = branches[envName];
+  let waiting = `${to} may be behind ${from}`;
+  if (typeof fromBranch === "string" && typeof toBranch === "string") {
+    waiting = fromBranch === toBranch
+      ? `${fromBranch} may have changes not yet released to ${to}`
+      : `${fromBranch} may have changes not yet merged to ${toBranch}`;
+  }
+  return `${from} built ${getAgeString(getDateDiffSeconds(mine, previous))} after ${to}: ${waiting}.`;
+}
+
+// Dashboard settings come from one retained MQTT topic (dashboard/WonScore/Deployments/config), so nothing specific
+// to one setup lives in this code. Both entries are optional:
 //   {"links": {"jenkins": "https://jenkins.example.com/job/{env}/job/{job}/",
-//              "ecs": {"alpha": "https://...{env}-{job}...", "beta": "...", "prod": "..."}}}
-// Each link template is one address for every environment, or an object with one per environment.
+//              "ecs": {"alpha": "https://...{env}-{job}...", "beta": "...", "prod": "..."}},
+//    "branches": {"alpha": "develop", "beta": "master", "prod": "master"}}
+// "links": templates for the status cells, each one address for every environment or one per environment.
+// "branches": what each environment builds from, for the promotion notes (see getPromotionNote).
 function parseConfig(json) {
   if (json === "") return {};
   try {
@@ -409,7 +441,8 @@ function getJenkinsSince(env) {
 // It also adds the task counts after the status where there's room (see .counts in app.css): "(2)" when all
 // desired tasks are running, "(2/3)" when they differ, so a mismatch stands out.
 // link (optional, {url, label} from getLink) makes the whole cell open that page in a new tab when clicked.
-function buildStatus(status, since, ecsEnv, link) {
+// promotionNote (optional, from getPromotionNote) adds a corner marker and explains it in the hover text.
+function buildStatus(status, since, ecsEnv, link, promotionNote) {
   const text = getStatusText(status);
   if (!text) {
     return `<td class="${getStatusClass(status)} icon"></td>`;
@@ -440,6 +473,10 @@ function buildStatus(status, since, ecsEnv, link) {
       classes += " failing";
       suffix = `<span class="health">✗${ecsEnv.ecsFailed}</span>`;
     }
+  }
+  if (promotionNote) {
+    classes += " behind";
+    titleLines.push(promotionNote);
   }
   let href = "";
   if (link) {
