@@ -1,4 +1,4 @@
-const _currentVersion = "20261029.01";  // also bump the ?v= on app.js and app.css in index.html
+const _currentVersion = "20261029.02";  // also bump the ?v= on app.js and app.css in index.html
 const _loadedVersions = getLoadedVersions();
 let _newVersion = _currentVersion;
 let _mqttCreds;
