@@ -416,6 +416,7 @@ function getJobType(name) {
   else if (name.startsWith("mongo-to-")) return "service";
   else if (name.startsWith("webui-")) return "web";
   else if (name.startsWith("wnd-")) return "component";
+  else if (name.startsWith("e2e-")) return "test";
   return "other";
 }
 
