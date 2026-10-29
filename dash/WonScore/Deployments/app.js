@@ -259,7 +259,7 @@ function renderOverallStatuses() {
   const buildSince = getOverallSince(jenkinsCells, buildStatus);
   const deploySince = getOverallSince(deployCells, deployStatus);
 
-  $('link[rel="icon"]').attr('href', `icons/${_isStale ? "unknown.png" : getStatusIcon(overallStatus)}`);
+  setTabIcon(_isStale ? "unknown.png" : getStatusIcon(overallStatus));
   renderOverallStatus("#buildStatus", buildStatus, buildSince);
   renderOverallStatus("#deployStatus", deployStatus, deploySince);
 
@@ -486,6 +486,12 @@ function getStatusIcon(status) {
   if (status) return `${getStatusClass(status)}.png`;
 }
 
+// Browsers keep tab icons in a separate, long-lived cache keyed by address, so the version goes on the
+// address; otherwise a changed icon can keep showing the old image even after a reload.
+function setTabIcon(file) {
+  $('link[rel="icon"]').attr('href', `icons/${file}?v=${_currentVersion}`);
+}
+
 setInterval(function() {
   if (_enableRefreshAt) {
     const seconds = getDateDiffSeconds(_enableRefreshAt, new Date());
@@ -630,7 +636,7 @@ function loadNewVersionView() {
   $("#ConnectionView").hide();
   $("#MainView").hide();
   $("#NewVersionView").show();
-  $('link[rel="icon"]').attr('href', "icons/refresh.png");
+  setTabIcon("refresh.png");
 }
 
 function loadMainView() {
@@ -656,7 +662,7 @@ function loadConnectionView() {
   $("#txtMQTTUserName").removeAttr("disabled");
   $("#txtMQTTPassword").removeAttr("disabled");
   $("#ConnectionView").show();
-  $('link[rel="icon"]').attr('href', "icons/connect.png");
+  setTabIcon("connect.png");
 }
 
 
@@ -744,7 +750,7 @@ $(document).ready(function() {
   // Startup: jQuery loaded; keep the error view only if the MQTT library didn't.
   if (typeof Paho === "undefined") {
     $("#ErrorView").css({opacity: 1, animation: "none"});
-    $('link[rel="icon"]').attr('href', "icons/failed.png");
+    setTabIcon("failed.png");
     return;
   }
   $("#ErrorView").remove();
