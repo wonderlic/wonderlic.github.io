@@ -208,11 +208,15 @@ function getEcsStatus(env) {
   return env.deployStatus;
 }
 
-// Hover text for the ECS cell, e.g. "2 of 3 tasks running, 1 pending, 4 failed since deploy".
+// Hover text for the ECS cell, e.g. "2 instances running", or "2 of 3 instances running, 1 pending, 4 failed since deploy"
+// when they differ (like the cell's "(2)" / "(2/3)"). ECS calls them tasks; "instances" reads more clearly on the dashboard.
 function getEcsHealthText(env) {
   if (!Number.isInteger(env.ecsRunning) || !Number.isInteger(env.ecsDesired)) return "";
-  if (env.ecsDesired === 0 && env.ecsRunning === 0) return "Scaled to 0 tasks";
-  let text = `${env.ecsRunning} of ${env.ecsDesired} tasks running`;
+  if (env.ecsDesired === 0 && env.ecsRunning === 0) return "Scaled to 0 instances";
+  const instances = env.ecsDesired === 1 ? "instance" : "instances";
+  let text = env.ecsRunning === env.ecsDesired
+    ? `${env.ecsRunning} ${instances} running`
+    : `${env.ecsRunning} of ${env.ecsDesired} ${instances} running`;
   if (env.ecsPending > 0) text += `, ${env.ecsPending} pending`;
   if (env.ecsFailed > 0) text += `, ${env.ecsFailed} failed since deploy`;
   return text;
