@@ -438,7 +438,7 @@ function getStatusText(status) {
     case "ABORTED":     return "Aborted";
     case "UNSTABLE":    return "Unstable";
     case "NOT_BUILT":   return "Not Built";
-    case "COMPLETED":   return "Completed";
+    case "COMPLETED":   return "Deployed";
     case "SUCCESS":     return "Success";
   }
   return "";
