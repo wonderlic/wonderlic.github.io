@@ -20,7 +20,6 @@ let _recentSeconds = getSavedRecentMinutes() * 60;
 // Deploys normally take 1-3 minutes; one still running after this long is flagged as slow.
 const _slowDeploySeconds = 10 * 60;
 let _enableRefreshAt;
-//let _enableBoostAt;
 
 function onMQTTConnected() {
   if (_shouldReconnect) {
@@ -43,7 +42,7 @@ function onMQTTConnected() {
     });
 
     MQTT_Subscribe("dashboard/WonScore/Deployments/ReleaseNotes/+", (changes, [version]) => {
-      if (parseFloat(version) > parseFloat(_currentVersion)) { 
+      if (parseFloat(version) > parseFloat(_currentVersion)) {
         _changes[version] = changes;
         renderChanges();
       }
@@ -63,7 +62,6 @@ function onMQTTConnected() {
       if (_newVersion !== _currentVersion) return;
       _lastCheckedOn = timestampToDate(ts);
       countShortfallChecks();
-      //_enableRefreshAt = new Date(_lastCheckedOn.getTime() + 5000);
       const seconds = getDateDiffSeconds(_lastCheckedOn, new Date());
       $("#lastChecked").text(`${getTimespanString(seconds)} ago`);
     });
@@ -73,7 +71,7 @@ function onMQTTConnected() {
       const refreshRate = parseInt(rate);
       _refreshRate = refreshRate;
       $("#refreshRate").text(getTimespanString(refreshRate));
-	    if (refreshRate === 10) {
+      if (refreshRate === 10) {
         $("#btnBoost").attr('disabled','disabled');
       } else {
         $("#btnBoost").removeAttr('disabled');
@@ -82,21 +80,18 @@ function onMQTTConnected() {
 
     MQTT_Subscribe("AWS-WonScore/ECS/services/+/+/deploymentStatus", (status, [envName, jobName]) => {
       if (_newVersion !== _currentVersion) return;
-      //console.log(envName, jobName, status);
       setJobField(envName, jobName, "deployStatus", status);
       renderMainView();
     });
 
     MQTT_Subscribe("Jenkins/+/+/status", (status, [envName, jobName]) => {
       if (_newVersion !== _currentVersion) return;
-      //console.log(envName, jobName, status);
       setJobField(envName, jobName, "buildStatus", status);
       renderMainView();
     });
 
     MQTT_Subscribe("Jenkins/+/+/inQueueSince", (ts, [envName, jobName]) => {
       if (_newVersion !== _currentVersion) return;
-      //console.log(envName, jobName, ts);
       setJobField(envName, jobName, "inQueueSince", ts === "" ? ts : timestampToDate(ts));
       renderMainView();
     });
@@ -242,7 +237,7 @@ function renderMainView() {
   _renderTimeout = setTimeout(function() {
     renderOverallStatuses();
     renderJobs();
-  }, 100);  
+  }, 100);
 }
 
 function renderOverallStatuses() {
@@ -336,16 +331,16 @@ function getOverallSince(cells, status) {
 function renderJobs() {
   let html = "";
   for (const jobName of Object.keys(_jobs).sort()) {
-	if (_filter !== "")	{
-    if (!jobName.toLowerCase().includes(_filter)) continue;
-	}
-	const job = _jobs[jobName];
+    if (_filter !== "") {
+      if (!jobName.toLowerCase().includes(_filter)) continue;
+    }
+    const job = _jobs[jobName];
     html += `<tr><td class="${getJobType(jobName)} icon">${escapeHtml(jobName)}</td>${buildJobEnvStatus(job.alpha)}${buildJobEnvStatus(job.beta)}${buildJobEnvStatus(job.prod)}</tr>`;
   }
   if (html == "") {
     html = `<tr><td colspan="7">No results found.</tr>`;
   }
-  $("#tblJobs > tbody").html(html); 
+  $("#tblJobs > tbody").html(html);
 }
 
 function buildJobEnvStatus(env) {
@@ -428,7 +423,7 @@ function getStatusText(status) {
   switch (status) {
     case "QUEUED":      return "Queued";
     case "BUILDING":    return "Building";
-   	case "IN_PROGRESS": return "Deploying";
+    case "IN_PROGRESS": return "Deploying";
     case "FAILED":      return "Failed!";
     case "FAILURE":     return "Failed!";
     case "FAILING":     return "Failing";
@@ -501,13 +496,6 @@ setInterval(function() {
       $("#btnRefresh").attr('disabled','disabled');
     }
   }
-/*  if (_enableBoostAt) {
-    const seconds = getDateDiffSeconds(_enableBoostAt, new Date());
-	if (seconds >= 0) {
-      $("#btnBoost").removeAttr('disabled');
-	  _enableBoostAt = undefined;
-	}
-  }*/
   if (!_checking && _lastCheckedOn) {
     let seconds = getDateDiffSeconds(_lastCheckedOn, new Date());
     $("#lastChecked").text(`${getTimespanString(seconds)} ago`);
@@ -636,12 +624,12 @@ function setConnected(connected) {
   }
 }
 
-function loadNewVersionView() {  
+function loadNewVersionView() {
   $("#currentVersion").text(_currentVersion);
   $("#newVersion").text(_newVersion);
   $("#ConnectionView").hide();
   $("#MainView").hide();
-  $("#NewVersionView").show();  
+  $("#NewVersionView").show();
   $('link[rel="icon"]').attr('href', "icons/refresh.png");
 }
 
@@ -673,7 +661,7 @@ function loadConnectionView() {
 
 
 // ----------------------------------------------------------------------------
-// jQuery event wire-up
+// jQuery event wire-up, then startup
 $(document).ready(function() {
 
   $("#appVersion").text(_currentVersion);
@@ -750,13 +738,10 @@ $(document).ready(function() {
   $("#btnBoost").on("click", function() {
     MQTT_Publish("AWS-WonScore/ECS/services/refreshRate", "10", 0, true);
     $("#btnBoost").attr('disabled','disabled');
-    //_enableBoostAt = new Date((new Date()).getTime() + 1000);
   });
 
-});
-
-$(document).ready(function() {
-  // jQuery loaded; keep the error view only if the MQTT library didn't.
+  // ----------------------------------------------------------------------------
+  // Startup: jQuery loaded; keep the error view only if the MQTT library didn't.
   if (typeof Paho === "undefined") {
     $("#ErrorView").css({opacity: 1, animation: "none"});
     $('link[rel="icon"]').attr('href', "icons/failed.png");
@@ -771,7 +756,7 @@ $(document).ready(function() {
   loadConnectionView();
   const autoConnect = localStorage.getItem("autoConnect");
   if (autoConnect === "true") {
-    $("#btnConnect").click();    
+    $("#btnConnect").click();
   }
 });
 
