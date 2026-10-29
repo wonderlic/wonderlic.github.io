@@ -14,6 +14,7 @@ let _lastCheckedOn;
 let _refreshRate;
 let _isStale = false;
 let _overall;  // {status, since} of the overall status, for the tab title
+let _config = {};  // dashboard settings from MQTT (see parseConfig)
 // Status cells that changed within this long get a "recent" highlight; each viewer picks it (0 = off).
 const _recentMinutesOptions = [0, 5, 15, 30, 60, 120, 240, 480, 1440, 2880, 4320, 10080, 43200];  // must match #selRecent's options
 let _recentSeconds = getSavedRecentMinutes() * 60;
@@ -46,6 +47,12 @@ function onMQTTConnected() {
         _changes[version] = changes;
         renderChanges();
       }
+    });
+
+    // Dashboard settings, as one retained JSON object (see parseConfig).
+    MQTT_Subscribe("dashboard/WonScore/Deployments/config", (json) => {
+      _config = parseConfig(json);
+      renderMainView();
     });
 
     MQTT_Subscribe("AWS-WonScore/ECS/services/checking", (ts) => {
@@ -339,7 +346,7 @@ function renderJobs() {
       if (!jobName.toLowerCase().includes(_filter)) continue;
     }
     const job = _jobs[jobName];
-    html += `<tr><td class="${getJobType(jobName)} icon">${escapeHtml(jobName)}</td>${buildJobEnvStatus(job.alpha)}${buildJobEnvStatus(job.beta)}${buildJobEnvStatus(job.prod)}</tr>`;
+    html += `<tr><td class="${getJobType(jobName)} icon">${escapeHtml(jobName)}</td>${buildJobEnvStatus(job.alpha, "alpha", jobName)}${buildJobEnvStatus(job.beta, "beta", jobName)}${buildJobEnvStatus(job.prod, "prod", jobName)}</tr>`;
   }
   if (html == "") {
     html = `<tr><td colspan="7">No results found.</tr>`;
@@ -347,8 +354,37 @@ function renderJobs() {
   $("#tblJobs > tbody").html(html);
 }
 
-function buildJobEnvStatus(env) {
-  return `${buildStatus(getJenkinsStatus(env), getJenkinsSince(env))}${buildStatus(getEcsStatus(env), getEcsSince(env), env)}`;
+function buildJobEnvStatus(env, envName, jobName) {
+  const jenkinsLink = getLink("jenkins", envName, jobName, "Jenkins");
+  const ecsLink = getLink("ecs", envName, jobName, "AWS");
+  return `${buildStatus(getJenkinsStatus(env), getJenkinsSince(env), undefined, jenkinsLink)}${buildStatus(getEcsStatus(env), getEcsSince(env), env, ecsLink)}`;
+}
+
+// Dashboard settings come from one retained MQTT topic (dashboard/WonScore/Deployments/config), so no addresses
+// live in this code. Currently just the link templates for the status cells:
+//   {"links": {"jenkins": "https://jenkins.example.com/job/{env}/job/{job}/",
+//              "ecs": {"alpha": "https://...{env}-{job}...", "beta": "...", "prod": "..."}}}
+// Each link template is one address for every environment, or an object with one per environment.
+function parseConfig(json) {
+  if (json === "") return {};
+  try {
+    const config = JSON.parse(json);
+    return config && typeof config === "object" ? config : {};
+  } catch (ex) {
+    console.warn("Ignoring invalid dashboard config:", ex.message);
+    return {};
+  }
+}
+
+// Returns {url, label} for a status cell, or undefined. Names are URL-encoded, and only https:// addresses are used,
+// so nothing published to the config topic can turn a click into something else.
+function getLink(kind, envName, jobName, label) {
+  const links = _config.links;
+  let template = links && typeof links === "object" ? links[kind] : undefined;
+  if (template && typeof template === "object") template = template[envName];
+  if (typeof template !== "string") return undefined;
+  const url = template.replaceAll("{env}", encodeURIComponent(envName)).replaceAll("{job}", encodeURIComponent(jobName));
+  return url.startsWith("https://") ? {url, label} : undefined;
 }
 
 // We don't know when a service became degraded or had tasks crash, so those get no age.
@@ -372,7 +408,8 @@ function getJenkinsSince(env) {
 // ecsEnv (optional, ECS cells only) adds the task counts to the hover text, and shows them in place of the age when degraded.
 // It also adds the task counts after the status where there's room (see .counts in app.css): "(2)" when all
 // desired tasks are running, "(2/3)" when they differ, so a mismatch stands out.
-function buildStatus(status, since, ecsEnv) {
+// link (optional, {url, label} from getLink) makes the whole cell open that page in a new tab when clicked.
+function buildStatus(status, since, ecsEnv, link) {
   const text = getStatusText(status);
   if (!text) {
     return `<td class="${getStatusClass(status)} icon"></td>`;
@@ -404,8 +441,14 @@ function buildStatus(status, since, ecsEnv) {
       suffix = `<span class="health">✗${ecsEnv.ecsFailed}</span>`;
     }
   }
+  let href = "";
+  if (link) {
+    classes += " linked";
+    titleLines.push(`Click to open in ${link.label}`);
+    href = ` data-href="${escapeHtml(link.url)}"`;
+  }
   const title = titleLines.length > 0 ? ` title="${escapeHtml(titleLines.join("\n"))}"` : "";
-  return `<td class="${classes}"${title}>${text}${counts}${suffix}</td>`;
+  return `<td class="${classes}"${title}${href}>${text}${counts}${suffix}</td>`;
 }
 
 function buildAge(since, seconds) {
@@ -755,6 +798,11 @@ $(document).ready(function() {
   $("#btnBoost").on("click", function() {
     MQTT_Publish("AWS-WonScore/ECS/services/refreshRate", "10", 0, true);
     $("#btnBoost").attr('disabled','disabled');
+  });
+
+  // Status cells with a link open it in a new tab (the whole cell, so it also works when only the icon shows).
+  $("#tblJobs").on("click", "td[data-href]", function() {
+    window.open(this.dataset.href, "_blank", "noopener");
   });
 
   // ----------------------------------------------------------------------------

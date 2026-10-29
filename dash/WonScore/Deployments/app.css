@@ -275,6 +275,13 @@ button.icon {
   background-position-x: 5px;
   padding-left: 35px;
 }
+/* Status cells that open Jenkins or AWS when clicked (see getLink). */
+#tblJobs tbody td.linked {
+  cursor: pointer;
+}
+#tblJobs tbody td.linked:hover {
+  box-shadow: inset 0px 0px 0px 2px #88aadd;
+}
 /* Wide (> 1200px): icon, text and age. Medium: icon and age. Narrow (<= 680px): icon only (the cell title keeps the time). */
 #tblJobs .age {
   margin-left: 0.5em;
