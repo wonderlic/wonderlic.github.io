@@ -368,6 +368,8 @@ function buildJobEnvStatus(job, envName, jobName) {
 // Builds flow through the environments in _envNames order, and only changed jobs build. So a Jenkins cell whose
 // previous stage built after it likely has changes waiting to be promoted to it. Only Jenkins cells are compared:
 // an API's ECS cell follows its own Jenkins build anyway.
+// Node-RED records a time for every build since build times were added, so a cell with no time last built before
+// that, and is older than a previous stage that has one.
 // Returns the hover note for such a cell, or undefined. The config's optional "branches"
 // ({"alpha": "develop", "beta": "master", "prod": "master"}) names what may be waiting.
 function getPromotionNote(job, envName) {
@@ -376,7 +378,8 @@ function getPromotionNote(job, envName) {
   const fromEnv = _envNames[index - 1];
   const mine = job[envName] && job[envName].buildStatusChangedOn;
   const previous = job[fromEnv] && job[fromEnv].buildStatusChangedOn;
-  if (!isValidDate(mine) || !isValidDate(previous) || previous <= mine) return undefined;
+  if (!isValidDate(previous)) return undefined;
+  if (isValidDate(mine) && previous <= mine) return undefined;
   const capitalize = (name) => name.charAt(0).toUpperCase() + name.slice(1);
   const from = capitalize(fromEnv), to = capitalize(envName);
   const branches = _config.branches && typeof _config.branches === "object" ? _config.branches : {};
@@ -387,7 +390,10 @@ function getPromotionNote(job, envName) {
       ? `${fromBranch} may have changes not yet released to ${to}`
       : `${fromBranch} may have changes not yet merged to ${toBranch}`;
   }
-  return `${from} built ${getAgeString(getDateDiffSeconds(mine, previous))} after ${to}: ${waiting}.`;
+  const when = isValidDate(mine)
+    ? `${from} built ${getAgeString(getDateDiffSeconds(mine, previous))} after ${to}`
+    : `${from} built ${getAgeString(getDateDiffSeconds(previous, new Date()))} ago, after ${to}'s last build`;
+  return `${when}: ${waiting}.`;
 }
 
 // Dashboard settings come from one retained MQTT topic (dashboard/WonScore/Deployments/config), so nothing specific
