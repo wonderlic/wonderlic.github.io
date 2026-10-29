@@ -88,11 +88,10 @@
     <div class='title'>WonScore Deployments</div>
     <div class='body'>
 	    <div>Overall Status:</div>
-      <ul>
-        <li>Jenkins Builds: <span id="buildStatus" class="icon"></span></li>
-        <li>AWS-ECS Service Deployments: <span id="deployStatus" class="icon"></span></li>
+      <ul class="overall">
+        <li><span class="source jenkins icon">Jenkins Builds:</span> <span id="buildStatus" class="icon"></span></li>
+        <li><span class="source aws icon">ECS Services:</span> <span id="deployStatus" class="icon"></span></li>
       </ul>
-      <br/>
       <div><label>Filter: </label><input type="text" id="txtFilter"/> <button id="btnResetFilter" class="cancel icon">Reset</button></div>
       <table id="tblJobs">
         <thead>

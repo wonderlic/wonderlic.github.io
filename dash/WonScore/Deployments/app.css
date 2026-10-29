@@ -162,6 +162,25 @@ button.icon {
   /* background-position-x: 3px; */
   padding-left: 30px;
 }
+/* "Jenkins Builds:" / "ECS Services:" labels, with the same logos as the table's column headers;
+   the logos stand in for the list bullets. Laid out as a two-column table so the statuses line up
+   whatever the font (Macs fall back to the wider Verdana). */
+.body ul.overall {
+  display: table;
+  border-spacing: 0 2px;
+  padding-left: 5px;
+  margin-bottom: 16px;
+}
+.body ul.overall li {
+  display: table-row;
+}
+.body ul.overall li > span {
+  display: table-cell;
+}
+.body li span.source {
+  font-weight: normal;
+  padding-left: 34px;
+}
 /* Overall status age; matches the table's age styling. */
 .body li span.age {
   padding: 0px;
