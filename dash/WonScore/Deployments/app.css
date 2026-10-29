@@ -296,6 +296,36 @@ button.icon {
   font-weight: bold;
   color: #cc0000;
 }
+/* Task counts after an ECS status ("(2)", or "(2/3)" when running and desired differ); only wider screens have room.
+   With the longest job name, widest statuses, "(6/6)"-wide counts and ages like "11mo", the table needs about 1275px. */
+#tblJobs .counts {
+  display: none;
+  margin-left: 0.4em;
+  font-size: 0.85em;
+  font-weight: normal;
+  color: #555555;
+}
+/* The middle layout (icon and age, no status text) also has room for them from 800px; it needs about 772px. */
+@media only screen and (min-width: 1300px), only screen and (min-width: 800px) and (max-width: 1200px) {
+  #tblJobs .counts {
+    display: inline;
+  }
+  /* Degraded shows its counts here, in red, instead of the separate "2/3". */
+  #tblJobs td.degraded .counts {
+    font-weight: bold;
+    color: #cc0000;
+  }
+  #tblJobs td.degraded .health {
+    display: none;
+  }
+}
+@media only screen and (min-width: 800px) and (max-width: 1200px) {
+  /* The cell's own text is hidden here (font-size 0), so the counts need their own size, like the age. */
+  #tblJobs .counts {
+    margin: 0px 4px 0px 0px;
+    font-size: 9pt;
+  }
+}
 /* The full icon + text + age layout needs about 1180px with the longest job names, widest statuses and ages like "11mo". */
 @media only screen and (max-width: 1200px) {
   #tblJobs .icon:not(:first-child) {

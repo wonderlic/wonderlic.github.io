@@ -366,6 +366,8 @@ function getJenkinsSince(env) {
 
 // since (optional) is when the status began; it adds an age (and a "recent" highlight) that updateAges() keeps current.
 // ecsEnv (optional, ECS cells only) adds the task counts to the hover text, and shows them in place of the age when degraded.
+// It also adds the task counts after the status where there's room (see .counts in app.css): "(2)" when all
+// desired tasks are running, "(2/3)" when they differ, so a mismatch stands out.
 function buildStatus(status, since, ecsEnv) {
   const text = getStatusText(status);
   if (!text) {
@@ -373,6 +375,11 @@ function buildStatus(status, since, ecsEnv) {
   }
   let classes = `${getStatusClass(status)} icon`;
   let suffix = "";
+  let counts = "";
+  if (ecsEnv && status !== "STOPPED" && Number.isInteger(ecsEnv.ecsRunning) && Number.isInteger(ecsEnv.ecsDesired)) {
+    const taskCounts = ecsEnv.ecsRunning === ecsEnv.ecsDesired ? ecsEnv.ecsRunning : `${ecsEnv.ecsRunning}/${ecsEnv.ecsDesired}`;
+    counts = `<span class="counts">(${taskCounts})</span>`;
+  }
   const titleLines = [];
   if (isValidDate(since)) {
     const seconds = getDateDiffSeconds(since, new Date());
@@ -394,7 +401,7 @@ function buildStatus(status, since, ecsEnv) {
     }
   }
   const title = titleLines.length > 0 ? ` title="${escapeHtml(titleLines.join("\n"))}"` : "";
-  return `<td class="${classes}"${title}>${text}${suffix}</td>`;
+  return `<td class="${classes}"${title}>${text}${counts}${suffix}</td>`;
 }
 
 function buildAge(since, seconds) {
